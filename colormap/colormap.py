@@ -73,7 +73,7 @@ def convert_color(
             raise RuntimeError(f"Unknown fill color: {color}, label: {label}")
 
 
-def get_colors_from_lyr(layer_file_path: str) -> dict[str, Tuple[RGBA, RGBA]]:
+def get_colors_from_lyr(layer_file_path: str) -> dict[int, Tuple[RGBA, RGBA]]:
     colors = {}
 
     with open(layer_file_path, "rb") as f:
@@ -112,16 +112,16 @@ def get_colors_from_lyr(layer_file_path: str) -> dict[str, Tuple[RGBA, RGBA]]:
             outline = background_symbol.outline  # type: SimpleLineSymbol
             outline_color_rgba = convert_color(outline.color)
 
-            colors[hanrei_c] = (fill_color_rgba, outline_color_rgba)
+            colors[int(hanrei_c)] = (fill_color_rgba, outline_color_rgba)
 
     return colors
 
 
 def generate_mapbox_style(
-    colors: dict[str, Tuple[RGBA, RGBA]]
-) -> Tuple[list[str | list[str]], list[str | list[str]]]:
-    fill_colors: dict[RGBA, list[str]] = defaultdict(list)
-    outline_colors: dict[RGBA, list[str]] = defaultdict(list)
+    colors: dict[int, Tuple[RGBA, RGBA]]
+) -> Tuple[list[str | list[int]], list[str | list[int]]]:
+    fill_colors: dict[RGBA, list[int]] = defaultdict(list)
+    outline_colors: dict[RGBA, list[int]] = defaultdict(list)
 
     for hanrei_c, (fill, outline) in colors.items():
         fill_colors[fill].append(hanrei_c)
@@ -130,7 +130,7 @@ def generate_mapbox_style(
     def _mapbox_style(c: dict[RGBA, list[str]]) -> list[str | list[str]]:
         mapbox_style = [
             "match",
-            ["get", "HANREI_C"],
+            ["get", "H"],
         ]
 
         for color, values in c.items():

@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "geojsoner"
+version = "0.1.0"
+description = ""
+authors = ["nonylene <nonylene@gmail.com>"]
+license = "CC0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fiona = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
