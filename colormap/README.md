@@ -8,5 +8,5 @@ Due to compatibility with the library, this script can convert only vg67 lyr fil
 
 ```
 $ docker build . -t colormap
-$ docker run --rm -v $(realpath lyr):/lyr -it colormap python3 colormap.py [-o] > vg67_style.json
+$ docker run --rm -v $(realpath lyr):/lyr -it colormap python3 colormap.py [-o] > ../data/style/vg67_style.json
 ```
