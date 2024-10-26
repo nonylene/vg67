@@ -156,9 +156,9 @@ def main(outline: bool):
     # fill
     fill_style, outline_style = generate_mapbox_style(colors)
 
-    print(json.dumps(fill_style))
+    print(json.dumps(fill_style, separators=(",", ":")))
     if outline:
-        print(json.dumps(outline_style))
+        print(json.dumps(outline_style, separators=(",", ":")))
 
 
 if __name__ == "__main__":
