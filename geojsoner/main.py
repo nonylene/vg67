@@ -14,6 +14,22 @@ EPSG_WGS84 = CRS.from_epsg(4326)
 LATLNG_PRECISION = 5
 
 
+# Pick shallowest path for a mesh
+# Background: Some origin data have multiple shapefiles for a mesh. Deeper shapefiles tend to be an old or duplicate one.
+def unique_files(files: list[str]) -> list[pathlib.Path]:
+    mesh_path = {}
+    for f in files:
+        path = pathlib.Path(f)
+        if p := mesh_path.get(path.stem):
+            if len(p.parents) < len(path.parents):
+                # Prior shallower path
+                continue
+
+        mesh_path[path.stem] = path
+
+    return [*mesh_path.values()]
+
+
 def main(shapefile_pattern: str, output_dir: pathlib.Path):
     if output_dir.exists() and not output_dir.is_dir():
         raise RuntimeError(
@@ -21,10 +37,9 @@ def main(shapefile_pattern: str, output_dir: pathlib.Path):
         )
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    files = glob.glob(shapefile_pattern)
-    for f in files:
-        print(f)
-        path = pathlib.Path(f)
+    files = unique_files(glob.glob(shapefile_pattern, recursive=True))
+    for path in files:
+        print(path.absolute())
         out = output_dir / f"{path.stem}.geojson"
         with fiona.open(path, encoding="Shift_JIS", crs=EPSG_JDG2000) as colxn:
             hanrei_key = (
