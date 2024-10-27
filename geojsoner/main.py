@@ -6,7 +6,7 @@ import fiona
 import fiona.transform
 from fiona.crs import CRS
 
-GEOJSON_SCHEMA = {"geometry": "Polygon", "properties": {"H": "int"}}
+GEOJSON_SCHEMA = {"geometry": ("Polygon", "MultiPolygon"), "properties": {"H": "int"}}
 
 EPSG_JDG2000 = CRS.from_epsg(4612)
 EPSG_WGS84 = CRS.from_epsg(4326)
