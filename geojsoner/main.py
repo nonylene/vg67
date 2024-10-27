@@ -23,6 +23,7 @@ def main(shapefile_pattern: str, output_dir: pathlib.Path):
 
     files = glob.glob(shapefile_pattern)
     for f in files:
+        print(f)
         path = pathlib.Path(f)
         out = output_dir / f"{path.stem}.geojson"
         with fiona.open(path, encoding="Shift_JIS", crs=EPSG_JDG2000) as colxn:
@@ -41,16 +42,41 @@ def main(shapefile_pattern: str, output_dir: pathlib.Path):
                     wgs_geom = fiona.transform.transform_geom(
                         EPSG_JDG2000, EPSG_WGS84, record.geometry
                     )
-                    new_geom = fiona.Geometry(
-                        type=wgs_geom.type,
-                        coordinates=[
-                            [
-                                (round(x, LATLNG_PRECISION), round(y, LATLNG_PRECISION))
-                                for (x, y) in coordinate
-                            ]
-                            for coordinate in wgs_geom.coordinates
-                        ],
-                    )
+
+                    match wgs_geom.type:
+                        case "MultiPolygon":
+                            new_geom = fiona.Geometry(
+                                type="MultiPolygon",
+                                coordinates=[
+                                    [
+                                        [
+                                            (
+                                                round(x, LATLNG_PRECISION),
+                                                round(y, LATLNG_PRECISION),
+                                            )
+                                            for (x, y) in coordinate
+                                        ]
+                                        for coordinate in coordinates
+                                    ]
+                                    for coordinates in wgs_geom.coordinates
+                                ],
+                            )
+                        case "Polygon":
+                            new_geom = fiona.Geometry(
+                                type="Polygon",
+                                coordinates=[
+                                    [
+                                        (
+                                            round(x, LATLNG_PRECISION),
+                                            round(y, LATLNG_PRECISION),
+                                        )
+                                        for (x, y) in coordinate
+                                    ]
+                                    for coordinate in wgs_geom.coordinates
+                                ],
+                            )
+                        case _:
+                            raise RuntimeError(f"Unknown record type: {record.type}")
 
                     new_feature = fiona.Feature(
                         geometry=new_geom,
