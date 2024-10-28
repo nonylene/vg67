@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>シームレス植生図 V1</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <script>
+    fillColorMatcher = "__TEMPLATE_FILL_COLOR_MATCHER__";
+
+    mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
+    const map = new mapboxgl.Map({
+      container: 'map',
+      center: [139.7669975, 35.6812505],
+      zoom: 10,
+      language: 'ja',
+      customAttribution: [`Source: <a href="https://www.biodic.go.jp/kiso/vg/vg_kiso.html">1/2.5万植生図GISデータ(環境省生物多様性センター)</a> を加工して作成`],
+    });
+
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true,
+      })
+    );
+
+    map.on('load', () => {
+      map.addSource('vg67-detail', {
+        type: 'vector',
+        tiles: [
+          "__TEMPLATE_MAPTILE_URL__",
+        ],
+        minzoom: 9,
+        maxzoom: 12,
+        bounds: [
+          122, 24, 146, 46,
+        ],
+      });
+      map.addLayer({
+        'id': 'vg67-detail',
+        'type': 'fill',
+        'source': 'vg67-detail',
+        'source-layer': 'vg67_detail',
+        'minzoom': 9,
+        "paint": {
+          "fill-color": fillColorMatcher,
+          "fill-opacity": 0.5,
+          "fill-outline-color": [
+            "step", ["zoom"],
+            "rgba(0,0,0,0)",
+            12, fillColorMatcher,
+          ],
+        },
+      });
+    });
+  </script>
+
+</body>
+
+</html>
