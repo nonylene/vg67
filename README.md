@@ -36,10 +36,10 @@ $ for f in $(find ./data/geojson/ -name '*.geojson'); do cat $f | jq -c . >> dat
 Install [felt/tippecanoe](https://github.com/felt/tippecanoe) and run:
 
 ```
-$ tippecanoe -Z10 -z12 -d13 -l vg67_detail --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --simplify-only-low-zooms -e data/mvt/out/ --force --read-parallel data/geojson-lines/vg67_detail.geojsonlines
+$ tippecanoe -Z10 -z12 -d13 -l vg67_detail --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --simplify-only-low-zooms --name="vg67_detail" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/out/ --force --read-parallel data/geojson-lines/vg67_detail.geojsonlines
 ```
 
-- `-l`: Merge all the geojson files into the one layer
+- `-l`: Merge all the geojson files into one layer
 - `--no-tile-compression`: Required for mapbox / QGIS
 - `--no-simplification-of-shared-nodes`: Cleanful polygon simpify (No overlaps, No empty spaces)
 - `--simplify-only-low-zooms`: Show precise polygons on the max zoom
