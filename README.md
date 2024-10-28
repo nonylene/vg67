@@ -50,10 +50,12 @@ $ tippecanoe -Z10 -z12 -d13 -l vg67_detail --no-simplification-of-shared-nodes -
 For example...
 
 ```
+$ cp rclone.conf.example rclone.conf
+$ edit rclone.conf
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/out:/data/mvt:ro rclone/rclone copy /data/mvt/ r2://{r2 bucket}/vg67/vg67_detail/ --no-check-dest --s3-no-check-bucket --progress
 ```
 
-### 7. Build the viewer page
+## Build the viewer page
 
 See [page](./page/README.md) directory
 
@@ -64,3 +66,6 @@ On data dir, run:
 ```
 $ python3 -m http.server
 ```
+
+- Open <http://localhost:8000/page/> on your browser to view the map
+- Set `http://localhost:8000/mvt/out/{z}/{x}/{y}.pbf` with max zoom level 12 to view the vector tiles on QGIS

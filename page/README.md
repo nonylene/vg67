@@ -1,8 +1,17 @@
-## page
+# page
 
 Build a page to view vg67 map.
 
-### Build
+## Setup
+
+```
+$ cp variables.toml.example variables.toml
+$ edit variables.toml
+```
+
+## Build
+
+Create mapbox styles in advance.
 
 ```
 $ python3 main.py
