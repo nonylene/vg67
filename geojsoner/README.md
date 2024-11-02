@@ -3,7 +3,8 @@
 Generate geojson files from vg67 shape files with some optimiazation:
 
 - Strip unused properties
-- Reduce precision (round 5, ~1m)
+- Reduce precision (round 7, ~1cm)
+  - Too rough precision (e.g.) may lead overlaps
 
 ## Run
 
