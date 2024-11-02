@@ -26,12 +26,14 @@
   <div id="map"></div>
   <script>
     fillColorMatcher = "__TEMPLATE_FILL_COLOR_MATCHER__";
+    fillColorMatcherTrimmed = "__TEMPLATE_FILL_COLOR_SHOKUSEI_MATCHER__";
 
     mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
     const map = new mapboxgl.Map({
       container: 'map',
       center: [139.7669975, 35.6812505],
       zoom: 10,
+      minZoom: 6,
       language: 'ja',
       customAttribution: [`Source: <a href="https://www.biodic.go.jp/kiso/vg/vg_kiso.html">1/2.5万植生図GISデータ(環境省生物多様性センター)</a> を加工して作成`],
     });
@@ -46,16 +48,40 @@
     );
 
     map.on('load', () => {
+      map.addSource('vg67-trimmed', {
+        type: 'vector',
+        tiles: [
+          "__TEMPLATE_MAPTILE_TRIMMED_URL__",
+        ],
+        minzoom: 6,
+        maxzoom: 9,
+        bounds: [
+          122, 24, 154, 46,
+        ],
+      });
       map.addSource('vg67-detail', {
         type: 'vector',
         tiles: [
-          "__TEMPLATE_MAPTILE_URL__",
+          "__TEMPLATE_MAPTILE_DETAIL_URL__",
         ],
         minzoom: 9,
         maxzoom: 12,
         bounds: [
           122, 24, 154, 46,
         ],
+      });
+      map.addLayer({
+        'id': 'vg67-trimmed',
+        'type': 'fill',
+        'source': 'vg67-trimmed',
+        'source-layer': 'vg67_trimmed',
+        'minzoom': 6,
+        'maxzoom': 9,
+        "paint": {
+          "fill-color": fillColorMatcherTrimmed,
+          "fill-opacity": 0.55,
+          "fill-outline-color": "rgba(0,0,0,0)",
+        },
       });
       map.addLayer({
         'id': 'vg67-detail',
@@ -72,6 +98,20 @@
             12, fillColorMatcher,
           ],
         },
+      });
+
+      map.on('click', 'vg67-detail', (e) => {
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(e.features[0].properties["H"])
+          .addTo(map);
+      });
+
+      map.on('click', 'vg67-trimmed', (e) => {
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(e.features[0].properties["S"])
+          .addTo(map);
       });
     });
   </script>

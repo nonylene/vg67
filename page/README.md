@@ -16,5 +16,5 @@ Create mapbox styles in advance.
 ```
 $ python3 main.py
 # inotify
-$ while inotifywait --recursive --monitor --event modify,move,create,delete .; do python3 build.py; done
+$ inotifywait --recursive --monitor --event modify,move,create,delete . | while read; do python3 build.py; done
 ```

@@ -6,10 +6,16 @@ import tomllib
 def build_variables(data_dir: pathlib.Path) -> dict[str, str]:
     # special
     mapbox_styles = json.load(open(data_dir / "style/vg67_style.json"))
+    mapbox_shokusei_styles = json.load(
+        open(data_dir / "style/vg67_shokusei_style.json")
+    )
 
     variables = {
         '"__TEMPLATE_FILL_COLOR_MATCHER__"': json.dumps(
             mapbox_styles, separators=(",", ":")
+        ),
+        '"__TEMPLATE_FILL_COLOR_SHOKUSEI_MATCHER__"': json.dumps(
+            mapbox_shokusei_styles, separators=(",", ":")
         ),
     }
 
