@@ -4,7 +4,7 @@ import json
 import pathlib
 import traceback
 from collections import defaultdict
-from math import sqrt
+from math import pi, sqrt
 
 import shapely
 import shapely.ops
@@ -38,26 +38,16 @@ def shokusei_kubun(code: int):
     return DAI_SHOKUSEI_MAP[code // 10000]
 
 
-def calculate_border_lengthes(geoms: list[shapely.Geometry]) -> list[list[float]]:
+def calculate_border_lengthes(geoms: list[shapely.Polygon]) -> list[list[float]]:
     points = defaultdict(set)
 
     # build common point information
     for i, geom in enumerate(geoms):
-        match type(geom):
-            case shapely.MultiPolygon:
-                polygons = geom.geoms  # type: ignore
-            case shapely.Polygon:
-                polygons = [geom]
-            case _:
-                raise RuntimeError(f"Unknown shape type: {type(geom)}")
-
-        polygon: shapely.Polygon
-        for polygon in polygons:  # type: ignore
-            for coord in polygon.exterior.coords:
+        for coord in geom.exterior.coords:
+            points[coord].add(i)
+        for interior in geom.interiors:
+            for coord in interior.coords:
                 points[coord].add(i)
-            for interior in polygon.interiors:
-                for coord in interior.coords:
-                    points[coord].add(i)
 
     # Common border length map
     geo_border_lengthes: list[list[float]] = [
@@ -65,21 +55,10 @@ def calculate_border_lengthes(geoms: list[shapely.Geometry]) -> list[list[float]
     ]
 
     for i, geom in enumerate(geoms):
-        match type(geom):
-            case shapely.MultiPolygon:
-                polygons = geom.geoms  # type: ignore
-            case shapely.Polygon:
-                polygons = [geom]
-            case _:
-                raise RuntimeError(f"Unknown shape type: {type(geom)}")
+        coords_list = [geom.exterior.coords]
 
-        coords_list = []
-        polygon: shapely.Polygon
-        for polygon in polygons:  # type: ignore
-            coords_list.append(polygon.exterior.coords)
-
-            for interior in polygon.interiors:
-                coords_list.append(interior.coords)
+        for interior in geom.interiors:
+            coords_list.append(interior.coords)
 
         past_xy: tuple[float, float] = (0, 0)
         for coords in coords_list:
@@ -104,6 +83,24 @@ def calculate_border_lengthes(geoms: list[shapely.Geometry]) -> list[list[float]
     return geo_border_lengthes
 
 
+def get_code_polygons(features: list[dict]) -> list[tuple[int, shapely.Polygon]]:
+    code_geometries: list[tuple[int, shapely.Polygon]] = []
+
+    for feature in features:
+        shokusei = shokusei_kubun(feature["properties"]["H"])
+        shape = shapely.geometry.shape(feature["geometry"])
+        match shape.geom_type:
+            case "Polygon":
+                code_geometries.append((shokusei, shape))  # type: ignore
+            case "MultiPolygon":
+                for geom in shape.geoms:  # type: ignore
+                    code_geometries.append((shokusei, geom))  # type: ignore
+            case _:
+                raise RuntimeError(f"Unknown shape type: {shape.geom_type}")
+
+    return code_geometries
+
+
 def main(geojson_pattern: str, output_dir: pathlib.Path):
     if output_dir.exists() and not output_dir.is_dir():
         raise RuntimeError(
@@ -119,20 +116,7 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
         out = output_dir / f"{path.stem}.geojson"
         value = json.load(open(path))
 
-        for feature in value["features"]:
-            try:
-                shapely.geometry.shape(feature["geometry"])
-            except:
-                print(feature)
-
-        code_geometries = [
-            (
-                shokusei_kubun(feature["properties"]["H"]),
-                shapely.geometry.shape(feature["geometry"]),
-            )
-            for feature in value["features"]
-        ]
-
+        code_geometries = get_code_polygons(value["features"])
         # sort by area size (big -> small)
         code_geometries_sorted = sorted(
             code_geometries, key=(lambda item: -item[1].area)
@@ -149,14 +133,24 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
             idx = length_at_first - 1 - reverse_i
             force_merge = False
 
+            area = geom.area
+
             # Remove too small shapes (500m^2)
-            if geom.area < 0.00001 * 500 * 0.00001 * 500:
+            if area < 0.00001 * 500 * 0.00001 * 500:
                 force_merge = True
 
-            # Remove too thin shapes (300m)
-            (minx, miny, maxx, maxy) = geom.bounds
-            if (maxy - miny) < 0.00001 * 300 or (maxx - minx) < 0.00001 * 300:
-                force_merge = True
+            # Remove too thin and relativity small shapes
+            if not force_merge:
+                simplified = geom.simplify(0.00001 * 100)
+                permeter = simplified.length
+                thinness = 4 * pi * area / permeter**2
+                if (
+                    area < 0.00001 * 1000 * 0.00001 * 10 * 1000
+                ):  # 10km (mesh size) * 1000m
+                    # Smaller object should be merged aggressively
+                    force_merge = thinness < 0.1
+                else:
+                    force_merge = thinness < 0.04
 
             # Find the obejct to merge
             # 1. Same code / 2. Max common border length
@@ -185,7 +179,7 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
 
             # Merge object!
             try:
-                code_geometries_sorted[merge_object_idx] = (
+                code_geometries_sorted[merge_object_idx] = (  # type: ignore
                     code_geom_to_merge[0],
                     shapely.unary_union([code_geom_to_merge[1], geom]),
                 )
