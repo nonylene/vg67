@@ -13,34 +13,6 @@ from slyr_community.parser.stream import Stream
 
 LAYER_FILE = "/lyr/origin.lyr"
 
-# initialize map http://gis.biodic.go.jp/webgis/sc-016.html
-_DAI_SHOKUSEI_MAP_SEED = {
-    0: range(0, 1),  # Unknown code: 9999
-    1: range(1, 4),
-    2: range(4, 8),
-    3: range(8, 11),
-    4: range(11, 22),
-    5: range(22, 27),
-    6: range(27, 40),
-    7: range(40, 47),
-    8: range(47, 54),
-    9: range(54, 58),
-    10: range(58, 59),
-    # 11 -> water (original)
-}
-DAI_SHOKUSEI_MAP = {}
-
-for shokusei, rng in _DAI_SHOKUSEI_MAP_SEED.items():
-    for dai in rng:
-        DAI_SHOKUSEI_MAP[dai] = shokusei
-
-
-def shokusei_kubun(code: int):
-    if code == 580600:
-        return 11
-
-    return DAI_SHOKUSEI_MAP[code // 10000]
-
 
 @dataclass(frozen=True)
 class RGBA:
@@ -85,9 +57,10 @@ SHOKUSEI_COLOR_ALIASES = {
     6: 280501,  # Dark green
     7: 420100,  # Choke red
     8: 470100,  # Wine red
-    9: 570400,  # Light Blue
+    9: 540100,  # Light brown
     10: 580100,  # Gray
     11: 580600,  # Sky blue
+    19: 570400,  # Sky blue
 }
 
 

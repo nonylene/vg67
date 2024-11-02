@@ -22,7 +22,8 @@ _DAI_SHOKUSEI_MAP_SEED = {
     8: range(47, 54),
     9: range(54, 58),
     10: range(58, 59),
-    # 11 -> water (original)
+    # 11 -> Water (original)
+    # 19 -> Paddy field
 }
 DAI_SHOKUSEI_MAP = {}
 
@@ -34,6 +35,9 @@ for shokusei, rng in _DAI_SHOKUSEI_MAP_SEED.items():
 def shokusei_kubun(code: int):
     if code == 580600:
         return 11
+
+    if code == 570400:
+        return 19
 
     return DAI_SHOKUSEI_MAP[code // 10000]
 
@@ -148,7 +152,7 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
                     area < 0.00001 * 1000 * 0.00001 * 10 * 1000
                 ):  # 10km (mesh size) * 1000m
                     # Smaller object should be merged aggressively
-                    force_merge = thinness < 0.1
+                    force_merge = thinness < 0.09
                 else:
                     force_merge = thinness < 0.04
 
