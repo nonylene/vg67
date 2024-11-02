@@ -13,6 +13,34 @@ from slyr_community.parser.stream import Stream
 
 LAYER_FILE = "/lyr/origin.lyr"
 
+# initialize map http://gis.biodic.go.jp/webgis/sc-016.html
+_DAI_SHOKUSEI_MAP_SEED = {
+    0: range(0, 1),  # Unknown code: 9999
+    1: range(1, 4),
+    2: range(4, 8),
+    3: range(8, 11),
+    4: range(11, 22),
+    5: range(22, 27),
+    6: range(27, 40),
+    7: range(40, 47),
+    8: range(47, 54),
+    9: range(54, 58),
+    10: range(58, 59),
+    # 11 -> water (original)
+}
+DAI_SHOKUSEI_MAP = {}
+
+for shokusei, rng in _DAI_SHOKUSEI_MAP_SEED.items():
+    for dai in rng:
+        DAI_SHOKUSEI_MAP[dai] = shokusei
+
+
+def shokusei_kubun(code: int):
+    if code == 580600:
+        return 11
+
+    return DAI_SHOKUSEI_MAP[code // 10000]
+
 
 @dataclass(frozen=True)
 class RGBA:
@@ -44,6 +72,23 @@ class RGBA:
 
 
 FALLBACK_COLOR = RGBA(0, 0, 0, 1)
+
+ADDITIONAL_COLORS = {9999: RGBA(0, 0, 0, 0)}
+
+SHOKUSEI_COLOR_ALIASES = {
+    0: 9999,  # transparent
+    1: 10000,  # light purple
+    2: 60107,  # Yellow
+    3: 80100,  # Light green
+    4: 110100,  # Mid Lime green
+    5: 220100,  # More Lime green
+    6: 280501,  # Dark green
+    7: 420100,  # Choke red
+    8: 470100,  # Wine red
+    9: 570400,  # Light Blue
+    10: 580100,  # Gray
+    11: 580600,  # Sky blue
+}
 
 
 def cmyk_to_rgba(c: int, m: int, y: int, k: int) -> RGBA:
@@ -114,11 +159,14 @@ def get_colors_from_lyr(layer_file_path: str) -> dict[int, Tuple[RGBA, RGBA]]:
 
             colors[int(hanrei_c)] = (fill_color_rgba, outline_color_rgba)
 
+    for hanrei, color in ADDITIONAL_COLORS.items():
+        colors[hanrei] = (color, RGBA(0, 0, 0, 1))
+
     return colors
 
 
 def generate_mapbox_style(
-    colors: dict[int, Tuple[RGBA, RGBA]]
+    colors: dict[int, Tuple[RGBA, RGBA]], key: str
 ) -> Tuple[list[str | list[int]], list[str | list[int]]]:
     fill_colors: dict[RGBA, list[int]] = defaultdict(list)
     outline_colors: dict[RGBA, list[int]] = defaultdict(list)
@@ -130,7 +178,7 @@ def generate_mapbox_style(
     def _mapbox_style(c: dict[RGBA, list[str]]) -> list[str | list[str]]:
         mapbox_style = [
             "match",
-            ["get", "H"],
+            ["get", key],
         ]
 
         for color, values in c.items():
@@ -144,7 +192,7 @@ def generate_mapbox_style(
     return _mapbox_style(fill_colors), _mapbox_style(outline_colors)
 
 
-def main(outline: bool):
+def main(outline: bool, shokusei: bool):
     # Register all available objects in slyr_community
     for i in dir(objects):
         obj = getattr(objects, i)
@@ -152,11 +200,18 @@ def main(outline: bool):
             REGISTRY.register(obj)
 
     colors = get_colors_from_lyr(LAYER_FILE)
+    shokusei_colors = {
+        code: colors[alias] for code, alias in SHOKUSEI_COLOR_ALIASES.items()
+    }
 
     # fill
-    fill_style, outline_style = generate_mapbox_style(colors)
+    fill_style, outline_style = generate_mapbox_style(colors, "H")
+    shokusei_fill_style, _ = generate_mapbox_style(shokusei_colors, "S")
 
-    print(json.dumps(fill_style, separators=(",", ":")))
+    if shokusei:
+        print(json.dumps(shokusei_fill_style, separators=(",", ":")))
+    else:
+        print(json.dumps(fill_style, separators=(",", ":")))
     if outline:
         print(json.dumps(outline_style, separators=(",", ":")))
 
@@ -166,7 +221,10 @@ if __name__ == "__main__":
         "colormap", "Export vg67 lyr colromap as mapbox style json"
     )
     parser.add_argument(
+        "-s", "--shokusei", help="Output shokusei style", action="store_true"
+    )
+    parser.add_argument(
         "-o", "--outline", help="Output outline style", action="store_true"
     )
     args = parser.parse_args()
-    main(args.outline)
+    main(args.outline, args.shokusei)
