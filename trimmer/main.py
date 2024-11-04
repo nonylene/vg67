@@ -31,6 +31,19 @@ for shokusei, rng in _DAI_SHOKUSEI_MAP_SEED.items():
     for dai in rng:
         DAI_SHOKUSEI_MAP[dai] = shokusei
 
+# 750m ^2
+FORCE_MERGE_AREA_LIMIT = 0.00001 * 750 * 0.00001 * 750
+# 150m
+FORCE_MERGE_SIMPLIFY_LIMIT = 0.00001 * 150
+# 5km * 1000m
+FORCE_MERGE_THINNESS_AREA_STEP_1 = 0.00001 * 1000 * 0.00001 * 5 * 1000
+# 15km * 1000m
+FORCE_MERGE_THINNESS_AREA_STEP_2 = 0.00001 * 1000 * 0.00001 * 15 * 1000
+# 30km * 1000m
+FORCE_MERGE_THINNESS_AREA_STEP_3 = 0.00001 * 1000 * 0.00001 * 30 * 1000
+# 13% common border required
+CODE_MERGE_MINIMUM_RATIO = 0.13
+
 
 def shokusei_kubun(code: int):
     if code == 580600:
@@ -130,6 +143,9 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
         geo_border_lengthes = calculate_border_lengthes(
             [geom for _, geom in code_geometries_sorted]
         )
+        geo_area_lengthes = [
+            (geom.area, geom.length) for _, geom in code_geometries_sorted
+        ]
 
         length_at_first = len(geo_border_lengthes)
         # Small to large
@@ -137,38 +153,53 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
             idx = length_at_first - 1 - reverse_i
             force_merge = False
 
-            area = geom.area
+            area, length = geo_area_lengthes[
+                idx
+            ]  # length includes exterior and interior
 
-            # Remove too small shapes (500m^2)
-            if area < 0.00001 * 500 * 0.00001 * 500:
+            # Remove too small shapes (750^2)
+            if area < FORCE_MERGE_AREA_LIMIT:
                 force_merge = True
 
             # Remove too thin and relativity small shapes
             if not force_merge:
-                simplified = geom.simplify(0.00001 * 100)
-                permeter = simplified.length
-                thinness = 4 * pi * area / permeter**2
-                if (
-                    area < 0.00001 * 1000 * 0.00001 * 10 * 1000
-                ):  # 10km (mesh size) * 1000m
-                    # Smaller object should be merged aggressively
-                    force_merge = thinness < 0.09
+                simplified = geom.simplify(FORCE_MERGE_SIMPLIFY_LIMIT)
+                if simplified.geom_type == "Polygon":
+                    permeter = simplified.exterior.length  # type: ignore
                 else:
-                    force_merge = thinness < 0.04
+                    # Simplified Polygon may be a MultiPolygon
+                    permeter = sum(geom.exterior.length for geom in simplified.geoms)  # type: ignore
+                thinness = 4 * pi * area / permeter**2
+
+                # Smaller object should be merged aggressively
+                if area < FORCE_MERGE_THINNESS_AREA_STEP_1:
+                    force_merge = thinness < 0.1
+                elif area < FORCE_MERGE_THINNESS_AREA_STEP_2:
+                    force_merge = thinness < 0.05
+                elif area < FORCE_MERGE_THINNESS_AREA_STEP_3:
+                    force_merge = thinness < 0.02
 
             # Find the obejct to merge
             # 1. Same code / 2. Max common border length
             objidx_max_len: tuple[None | int, float] = (None, 0)
             objidx_len_to_merge: tuple[None | int, float] = (None, 0)
-            for j, length in enumerate(geo_border_lengthes[idx]):  # type: ignore
-                if length > objidx_max_len[1]:
-                    objidx_max_len = (j, length)
+            for j, border_length in enumerate(geo_border_lengthes[idx]):  # type: ignore
+                if border_length > objidx_max_len[1]:
+                    objidx_max_len = (j, border_length)
 
                 if (
                     code == code_geometries_sorted[j][0]
-                    and length > objidx_len_to_merge[1]
+                    and border_length > objidx_len_to_merge[1]
                 ):
-                    objidx_len_to_merge = (j, length)
+                    # Get the ratio of the common border to the total length the smaller object
+                    j_area, j_length = geo_area_lengthes[j]
+                    if j_area > area:
+                        ratio = border_length / length
+                    else:
+                        ratio = border_length / j_length
+
+                    if ratio > CODE_MERGE_MINIMUM_RATIO:
+                        objidx_len_to_merge = (j, border_length)
 
             if objidx_len_to_merge[0] is None and force_merge:
                 # Smaller object should merge even non-common code object
@@ -183,11 +214,16 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
 
             # Merge object!
             try:
+                merged_geom = shapely.unary_union([code_geom_to_merge[1], geom])
                 code_geometries_sorted[merge_object_idx] = (  # type: ignore
                     code_geom_to_merge[0],
-                    shapely.unary_union([code_geom_to_merge[1], geom]),
+                    merged_geom,
                 )
-            except Exception as e:
+                geo_area_lengthes[merge_object_idx] = (
+                    area + geo_area_lengthes[merge_object_idx][0],
+                    merged_geom.length,
+                )
+            except Exception:
                 traceback.print_exc()
 
             # Remove merged object data
@@ -202,6 +238,7 @@ def main(geojson_pattern: str, output_dir: pathlib.Path):
                 geo_border_lengthes[j][merge_object_idx] = new_length
 
             geo_border_lengthes.pop(idx)
+            geo_area_lengthes.pop(idx)
             code_geometries_sorted.pop(idx)
 
             for l in geo_border_lengthes:
