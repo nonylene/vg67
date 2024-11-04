@@ -45,7 +45,22 @@ class RGBA:
 
 FALLBACK_COLOR = RGBA(0, 0, 0, 1)
 
-ADDITIONAL_COLORS = {9999: RGBA(0, 0, 0, 0)}
+ADDITIONAL_COLORS = {
+    9999: RGBA(0, 0, 0, 0),
+    40106: RGBA(112, 168, 0, 1),  # ダケカンバ‐エゾマツ群落（風倒跡地自然再生林）
+    120109: RGBA(140, 179, 140, 1),  # ミズナラ‐アカエゾマツ群落
+    540701: RGBA(255, 167, 127, 1),  # カラマツ群落（火砕流堆積地）
+    521302: RGBA(230, 230, 179, 1),  # カラマツ－ミネヤナギ群落
+    521500: RGBA(76, 230, 0, 1),  # サラサドウダン群落
+    520202: RGBA(0, 230, 169, 1),  # クマイザサ－イソツツジ群落
+    580102: RGBA(168, 56, 0, 1),  # 太陽光発電施設
+    470418: RGBA(0, 128, 204, 1),  # ヨシ群落（代償植生）
+    220112: RGBA(209, 255, 115, 1),  # チシマザサ－ブナ群集（Ｖ）
+    70107: RGBA(201, 158, 201, 1),  # タテヤマアザミ‐ホソバトリカブト群集
+    401000: RGBA(38, 115, 0, 1),  # ユズリハ二次林
+    141701: RGBA(36, 87, 61, 1),  # キタゴヨウ‐アカエゾマツ群落
+    20608: RGBA(66, 82, 163, 1),  # コメススキ－イワツメクサ群集
+}
 
 SHOKUSEI_COLOR_ALIASES = {
     0: 9999,  # transparent
@@ -133,6 +148,10 @@ def get_colors_from_lyr(layer_file_path: str) -> dict[int, Tuple[RGBA, RGBA]]:
             colors[int(hanrei_c)] = (fill_color_rgba, outline_color_rgba)
 
     for hanrei, color in ADDITIONAL_COLORS.items():
+        if hanrei in colors:
+            raise RuntimeError(
+                f"Color map already has Hanrei code defined in ADDITIONAL_COLORS: {hanrei}"
+            )
         colors[hanrei] = (color, RGBA(0, 0, 0, 1))
 
     return colors
