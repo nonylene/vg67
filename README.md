@@ -3,6 +3,8 @@
 ## Schema
 
 - `H`: Represents `HANREI_C` (See [凡例コード](http://gis.biodic.go.jp/webgis/sc-015.html) for details)
+- `C`: Represents `{DAI_C}{CHU_C}`
+- `S`: Represents `{SHOKU_C}` with original additional codes
 
 ## Craete mapbox styles
 
@@ -20,32 +22,46 @@ Path should be like `vg67/vg67_01/shp644441/p644441.shp` or `vg67/vg67_22/shp523
 
 ### 3. Convert shapefile to geojson
 
-See [geojsoner](./geojsoner/README.md).
+See [geojsoner](./geojsoner/).
 
-### 4. Merge all the geojson files into a single jsonlines file
-
-This step improves performance by 2x on the step 5.
+and Run:
 
 ```
-$ rm data/geojson-lines/vg67_detail.geojsonlines
-$ for f in $(find ./data/geojson/ -name '*.geojson'); do cat $f | jq -c . >> data/geojson-lines/vg67_detail.geojsonlines; done
+# Insert a newline after each file
+$ awk '{print $0}' ./data/geojson/*.geojson > data/geojson-lines/vg67_detail.geojsonlines
 ```
 
-### 5. Create xyz style mvt tile files
+This merge improves tippecanoe performance by 2x.
+
+### 5. Trim geojsons for lower zooms
+
+See [trimmer](./trimmer/)
+
+and Run:
+
+```
+# Insert a newline after each file
+$ awk '{print $0}' ./data/geojson-trimmed/chu/*.geojson > data/geojson-lines/vg67_chu.geojsonlines
+$ awk '{print $0}' ./data/geojson-trimmed/shokusei/*.geojson > data/geojson-lines/vg67_shokusei.geojsonlines
+```
+
+### 6. Create xyz style mvt tile files
 
 Install [felt/tippecanoe](https://github.com/felt/tippecanoe) and run:
 
 ```
-$ tippecanoe -Z10 -z12 -d13 -l vg67_detail --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --simplify-only-low-zooms --name="vg67_detail" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/out/ --force --read-parallel data/geojson-lines/vg67_detail.geojsonlines
+$ tippecanoe -Z10 -z12 -d14 -l vg67_detail --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_detail" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/detail/out/ --force --read-parallel data/geojson-lines/vg67_detail.geojsonlines
+$ tippecanoe -Z8 -z9 -l vg67_chu --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_chu" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/chu/out/ --force --read-parallel data/geojson-lines/vg67_chu.geojsonlines
+$ tippecanoe -Z6 -z8 -l vg67_shokusei --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_shokusei" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/shokusei/out/ --force --read-parallel data/geojson-lines/vg67_shokusei.geojsonlines 
 ```
 
+- `-d14`: Keep high resolution on the max zoom
 - `-l`: Merge all the geojson files into one layer
 - `--no-tile-compression`: Required for mapbox / QGIS
 - `--no-simplification-of-shared-nodes`: Cleanful polygon simpify (No overlaps, No empty spaces)
-- `--simplify-only-low-zooms`: Show precise polygons on the max zoom
 - `--no-tiny-polygon-reduction`: Disable small polygon show up as a square polygon
 
-### 6. Upload maptile files to some block storage
+### 7. Upload maptile files to some block storage
 
 For example...
 
@@ -53,6 +69,7 @@ For example...
 $ cp rclone.conf.example rclone.conf
 $ edit rclone.conf
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/out:/data/mvt:ro rclone/rclone copy /data/mvt/ r2://{r2 bucket}/vg67/vg67_detail/ --no-check-dest --s3-no-check-bucket --progress
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/trimmed/out:/data/mvt:ro rclone/rclone copy /data/mvt/ r2://{r2 bucket}/vg67/vg67_trimmed/ --no-check-dest --s3-no-check-bucket --progress
 ```
 
 ## Build the viewer page
