@@ -4,6 +4,8 @@ import argparse
 import json
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum, auto
+from operator import itemgetter
 from typing import Tuple
 
 from slyr_community.parser import objects
@@ -41,6 +43,12 @@ class RGBA:
         return (
             f"rgba({round(self.r)},{round(self.g)},{round(self.b)},{fmt_alpha(self.a)})"
         )
+
+
+class Kubun(Enum):
+    SAI = auto()
+    CHU = auto()
+    SHOKUSEI = auto()
 
 
 FALLBACK_COLOR = RGBA(0, 0, 0, 1)
@@ -184,7 +192,19 @@ def generate_mapbox_style(
     return _mapbox_style(fill_colors), _mapbox_style(outline_colors)
 
 
-def main(outline: bool, shokusei: bool):
+def pick_color_for_chu(
+    sai_colors: dict[int, Tuple[RGBA, RGBA]]
+) -> dict[int, Tuple[RGBA, RGBA]]:
+    chu_color = {}
+    for i, colors in sorted(sai_colors.items(), key=itemgetter(0)):
+        chu = i // 100
+        if chu not in chu_color:
+            chu_color[chu] = colors
+
+    return chu_color
+
+
+def main(kubun: Kubun):
     # Register all available objects in slyr_community
     for i in dir(objects):
         obj = getattr(objects, i)
@@ -196,16 +216,19 @@ def main(outline: bool, shokusei: bool):
         code: colors[alias] for code, alias in SHOKUSEI_COLOR_ALIASES.items()
     }
 
-    # fill
-    fill_style, outline_style = generate_mapbox_style(colors, "H")
+    sai_fill_style, _ = generate_mapbox_style(colors, "H")
+    chu_fill_style, _ = generate_mapbox_style(pick_color_for_chu(colors), "S")  # temp
     shokusei_fill_style, _ = generate_mapbox_style(shokusei_colors, "S")
 
-    if shokusei:
-        print(json.dumps(shokusei_fill_style, separators=(",", ":")))
-    else:
-        print(json.dumps(fill_style, separators=(",", ":")))
-    if outline:
-        print(json.dumps(outline_style, separators=(",", ":")))
+    match kubun:
+        case Kubun.SAI:
+            style = sai_fill_style
+        case Kubun.CHU:
+            style = chu_fill_style
+        case Kubun.SHOKUSEI:
+            style = shokusei_fill_style
+
+    print(json.dumps(style, separators=(",", ":")))
 
 
 if __name__ == "__main__":
@@ -213,10 +236,20 @@ if __name__ == "__main__":
         "colormap", "Export vg67 lyr colromap as mapbox style json"
     )
     parser.add_argument(
-        "-s", "--shokusei", help="Output shokusei style", action="store_true"
-    )
-    parser.add_argument(
-        "-o", "--outline", help="Output outline style", action="store_true"
+        "-k",
+        "--kubun",
+        help="Output shokusei kubun",
+        type=str,
+        choices=("sai", "chu", "shokusei"),
     )
     args = parser.parse_args()
-    main(args.outline, args.shokusei)
+
+    match args.kubun:
+        case "sai":
+            kubun = Kubun.SAI
+        case "chu":
+            kubun = Kubun.CHU
+        case "shokusei":
+            kubun = Kubun.SHOKUSEI
+
+    main(kubun)
