@@ -26,7 +26,8 @@
   <div id="map"></div>
   <script>
     fillColorMatcher = "__TEMPLATE_FILL_COLOR_MATCHER__";
-    fillColorMatcherTrimmed = "__TEMPLATE_FILL_COLOR_SHOKUSEI_MATCHER__";
+    fillColorMatcherChu = "__TEMPLATE_FILL_COLOR_CHU_MATCHER__";
+    fillColorMatcherShokusei = "__TEMPLATE_FILL_COLOR_SHOKUSEI_MATCHER__";
 
     mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
     const map = new mapboxgl.Map({
@@ -48,12 +49,23 @@
     );
 
     map.on('load', () => {
-      map.addSource('vg67-trimmed', {
+      map.addSource('vg67-shokusei', {
         type: 'vector',
         tiles: [
-          "__TEMPLATE_MAPTILE_TRIMMED_URL__",
+          "__TEMPLATE_MAPTILE_SHOKUSEI_URL__",
         ],
         minzoom: 6,
+        maxzoom: 8,
+        bounds: [
+          122, 24, 154, 46,
+        ],
+      });
+      map.addSource('vg67-chu', {
+        type: 'vector',
+        tiles: [
+          "__TEMPLATE_MAPTILE_CHU_URL__",
+        ],
+        minzoom: 8,
         maxzoom: 9,
         bounds: [
           122, 24, 154, 46,
@@ -70,16 +82,30 @@
           122, 24, 154, 46,
         ],
       });
+
       map.addLayer({
-        'id': 'vg67-trimmed',
+        'id': 'vg67-shokusei',
         'type': 'fill',
-        'source': 'vg67-trimmed',
-        'source-layer': 'vg67_trimmed',
+        'source': 'vg67-shokusei',
+        'source-layer': 'vg67_shokusei',
         'minzoom': 6,
-        'maxzoom': 9,
+        'maxzoom': 8,
         "paint": {
-          "fill-color": fillColorMatcherTrimmed,
-          "fill-opacity": 0.55,
+          "fill-color": fillColorMatcherShokusei,
+          "fill-opacity": 0.5,
+          "fill-outline-color": "rgba(0,0,0,0)",
+        },
+      });
+      map.addLayer({
+        'id': 'vg67-chu',
+        'type': 'fill',
+        'source': 'vg67-chu',
+        'source-layer': 'vg67_chu',
+        'minzoom': 8,
+        'maxzoom': 10,
+        "paint": {
+          "fill-color": fillColorMatcherChu,
+          "fill-opacity": 0.5,
           "fill-outline-color": "rgba(0,0,0,0)",
         },
       });
@@ -88,7 +114,7 @@
         'type': 'fill',
         'source': 'vg67-detail',
         'source-layer': 'vg67_detail',
-        'minzoom': 9,
+        'minzoom': 10,
         "paint": {
           "fill-color": fillColorMatcher,
           "fill-opacity": 0.55,
@@ -107,7 +133,7 @@
           .addTo(map);
       });
 
-      map.on('click', 'vg67-trimmed', (e) => {
+      map.on('click', 'vg67-shokusei', (e) => {
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(e.features[0].properties["S"])

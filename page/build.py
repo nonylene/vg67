@@ -9,10 +9,14 @@ def build_variables(data_dir: pathlib.Path) -> dict[str, str]:
     mapbox_shokusei_styles = json.load(
         open(data_dir / "style/vg67_shokusei_style.json")
     )
+    mapbox_chu_styles = json.load(open(data_dir / "style/vg67_chu_style.json"))
 
     variables = {
         '"__TEMPLATE_FILL_COLOR_MATCHER__"': json.dumps(
             mapbox_styles, separators=(",", ":")
+        ),
+        '"__TEMPLATE_FILL_COLOR_CHU_MATCHER__"': json.dumps(
+            mapbox_chu_styles, separators=(",", ":")
         ),
         '"__TEMPLATE_FILL_COLOR_SHOKUSEI_MATCHER__"': json.dumps(
             mapbox_shokusei_styles, separators=(",", ":")
