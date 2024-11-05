@@ -5,7 +5,7 @@ import tomllib
 
 def build_variables(data_dir: pathlib.Path) -> dict[str, str]:
     # special
-    mapbox_styles = json.load(open(data_dir / "style/vg67_style.json"))
+    mapbox_styles = json.load(open(data_dir / "style/vg67_sai_style.json"))
     mapbox_shokusei_styles = json.load(
         open(data_dir / "style/vg67_shokusei_style.json")
     )
