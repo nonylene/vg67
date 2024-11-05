@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import pathlib
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -43,12 +44,6 @@ class RGBA:
         return (
             f"rgba({round(self.r)},{round(self.g)},{round(self.b)},{fmt_alpha(self.a)})"
         )
-
-
-class Kubun(Enum):
-    SAI = auto()
-    CHU = auto()
-    SHOKUSEI = auto()
 
 
 FALLBACK_COLOR = RGBA(0, 0, 0, 1)
@@ -204,7 +199,13 @@ def pick_color_for_chu(
     return chu_color
 
 
-def main(kubun: Kubun):
+def main(output_dir: pathlib.Path):
+    if output_dir.exists() and not output_dir.is_dir():
+        raise RuntimeError(
+            f"Output directory: {output_dir.absolute()} is not a directory"
+        )
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     # Register all available objects in slyr_community
     for i in dir(objects):
         obj = getattr(objects, i)
@@ -220,15 +221,12 @@ def main(kubun: Kubun):
     chu_fill_style, _ = generate_mapbox_style(pick_color_for_chu(colors), "S")  # temp
     shokusei_fill_style, _ = generate_mapbox_style(shokusei_colors, "S")
 
-    match kubun:
-        case Kubun.SAI:
-            style = sai_fill_style
-        case Kubun.CHU:
-            style = chu_fill_style
-        case Kubun.SHOKUSEI:
-            style = shokusei_fill_style
+    def dump(path, style):
+        json.dump(style, open(path, "w"), separators=(",", ":"))
 
-    print(json.dumps(style, separators=(",", ":")))
+    dump(output_dir / "vg67_sai_style.json", sai_fill_style)
+    dump(output_dir / "vg67_chu_style.json", chu_fill_style)
+    dump(output_dir / "vg67_shokusei_style.json", shokusei_fill_style)
 
 
 if __name__ == "__main__":
@@ -236,20 +234,12 @@ if __name__ == "__main__":
         "colormap", "Export vg67 lyr colromap as mapbox style json"
     )
     parser.add_argument(
-        "-k",
-        "--kubun",
-        help="Output shokusei kubun",
-        type=str,
-        choices=("sai", "chu", "shokusei"),
+        "-o",
+        "--out",
+        help="Output directory",
+        type=pathlib.Path,
+        default=pathlib.Path("/data/style"),
     )
     args = parser.parse_args()
 
-    match args.kubun:
-        case "sai":
-            kubun = Kubun.SAI
-        case "chu":
-            kubun = Kubun.CHU
-        case "shokusei":
-            kubun = Kubun.SHOKUSEI
-
-    main(kubun)
+    main(args.out)
