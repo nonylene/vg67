@@ -218,7 +218,7 @@ def main(output_dir: pathlib.Path):
     }
 
     sai_fill_style, _ = generate_mapbox_style(colors, "H")
-    chu_fill_style, _ = generate_mapbox_style(pick_color_for_chu(colors), "S")  # temp
+    chu_fill_style, _ = generate_mapbox_style(pick_color_for_chu(colors), "C")
     shokusei_fill_style, _ = generate_mapbox_style(shokusei_colors, "S")
 
     def dump(path, style):

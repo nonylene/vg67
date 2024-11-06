@@ -133,6 +133,13 @@
           .addTo(map);
       });
 
+      map.on('click', 'vg67-chu', (e) => {
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(e.features[0].properties["C"])
+          .addTo(map);
+      });
+
       map.on('click', 'vg67-shokusei', (e) => {
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
