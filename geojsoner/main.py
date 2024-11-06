@@ -80,7 +80,7 @@ def main(shapefile_pattern: str, output_dir: pathlib.Path):
 
             for record in colxn:
                 if cleanup_function is not None:
-                    record = cleanup_function(record)
+                    record = cleanup_function(colxn, record)
                     if record is None:
                         continue
 
