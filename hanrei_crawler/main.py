@@ -149,11 +149,13 @@ def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
     dai = {}
     chu = {}
     sai = {}
+    shokusei = {}
     for legend1 in legends:
         dai[int(legend1.code)] = {
             "cc": roman_to_number[legend1.class_code],
             "n": legend1.name,
         }
+        shokusei[roman_to_number[legend1.class_code]] = legend1.class_name
         if legend1.second is not None:
             for legend2 in legend1.second:
                 chu[int(legend1.code + legend2.code)] = {
@@ -166,20 +168,26 @@ def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
                         }
 
     json.dump(
+        shokusei,
+        open(names_dir / "shokusei_raw.json", "w"),
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    json.dump(
         dai,
-        open(names_dir / "dai.json", "w"),
+        open(names_dir / "dai_raw.json", "w"),
         separators=(",", ":"),
         ensure_ascii=False,
     )
     json.dump(
         chu,
-        open(names_dir / "chu.json", "w"),
+        open(names_dir / "chu_raw.json", "w"),
         separators=(",", ":"),
         ensure_ascii=False,
     )
     json.dump(
         sai,
-        open(names_dir / "sai.json", "w"),
+        open(names_dir / "sai_raw.json", "w"),
         separators=(",", ":"),
         ensure_ascii=False,
     )
@@ -229,7 +237,12 @@ def crawl_dump_legend_explanations(out_dir: pathlib.Path, legends: list[Legend1s
         )
 
 
-def main(out_dir: pathlib.Path):
+def main(data_dir: pathlib.Path):
+    out_dir = data_dir / "hanrei"
+    if out_dir.exists() and not out_dir.is_dir():
+        raise RuntimeError(f"Output directory: {out_dir.absolute()} is not a directory")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     legends: list[Legend1st] = []
     for i in range(1, 59):
         legends.append(crawl_legend_title(i))
@@ -245,11 +258,11 @@ if __name__ == "__main__":
         "Crawl hanrei description documents from Ministry of Environment Japan",
     )
     parser.add_argument(
-        "-o",
-        "--out-dir",
-        help="Directory for output geojson files",
+        "-d",
+        "--data-dir",
+        help="Base directory for output files",
         type=pathlib.Path,
-        default=pathlib.Path("../data/hanrei"),
+        default=pathlib.Path(__file__).parent.parent / "data",
     )
     args = parser.parse_args()
-    main(args.out_dir)
+    main(args.data_dir)
