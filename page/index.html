@@ -27,7 +27,7 @@
   <script>
     fillColorMatcher = "__TEMPLATE_FILL_COLOR_MATCHER__";
     fillColorMatcherChu = "__TEMPLATE_FILL_COLOR_CHU_MATCHER__";
-    fillColorMatcherShokusei = "__TEMPLATE_FILL_COLOR_SHOKUSEI_MATCHER__";
+    fillColorMatcherDai = "__TEMPLATE_FILL_COLOR_DAI_MATCHER__";
 
     mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
     const map = new mapboxgl.Map({
@@ -49,10 +49,10 @@
     );
 
     map.on('load', () => {
-      map.addSource('vg67-shokusei', {
+      map.addSource('vg67-dai', {
         type: 'vector',
         tiles: [
-          "__TEMPLATE_MAPTILE_SHOKUSEI_URL__",
+          "__TEMPLATE_MAPTILE_DAI_URL__",
         ],
         minzoom: 6,
         maxzoom: 8,
@@ -84,14 +84,14 @@
       });
 
       map.addLayer({
-        'id': 'vg67-shokusei',
+        'id': 'vg67-dai',
         'type': 'fill',
-        'source': 'vg67-shokusei',
-        'source-layer': 'vg67_shokusei',
+        'source': 'vg67-dai',
+        'source-layer': 'vg67_dai',
         'minzoom': 6,
         'maxzoom': 8,
         "paint": {
-          "fill-color": fillColorMatcherShokusei,
+          "fill-color": fillColorMatcherDai,
           "fill-opacity": 0.5,
           "fill-outline-color": "rgba(0,0,0,0)",
         },
@@ -140,10 +140,10 @@
           .addTo(map);
       });
 
-      map.on('click', 'vg67-shokusei', (e) => {
+      map.on('click', 'vg67-dai', (e) => {
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
-          .setHTML(e.features[0].properties["S"])
+          .setHTML(e.features[0].properties["D"])
           .addTo(map);
       });
     });

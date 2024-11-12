@@ -65,20 +65,10 @@ ADDITIONAL_COLORS = {
     20608: RGBA(66, 82, 163, 1),  # コメススキ－イワツメクサ群集
 }
 
-SHOKUSEI_COLOR_ALIASES = {
+DAI_COLOR_ALIASES = {
     0: 9999,  # transparent
-    1: 10000,  # light purple
-    2: 60107,  # Yellow
-    3: 80100,  # Light green
-    4: 110100,  # Mid Lime green
-    5: 220100,  # More Lime green
-    6: 280501,  # Dark green
-    7: 420100,  # Choke red
-    8: 470100,  # Wine red
-    9: 540100,  # Light brown
-    10: 580100,  # Gray
-    11: 580600,  # Sky blue
-    19: 570400,  # Sky blue
+    91: 580600,  # Sky blue
+    99: 570400,  # Sky blue
 }
 
 
@@ -199,6 +189,21 @@ def pick_color_for_chu(
     return chu_color
 
 
+def pick_color_for_dai(
+    sai_colors: dict[int, Tuple[RGBA, RGBA]]
+) -> dict[int, Tuple[RGBA, RGBA]]:
+    dai_color = {}
+    for i, colors in sorted(sai_colors.items(), key=itemgetter(0)):
+        dai = i // 10000
+        if dai not in dai_color:
+            dai_color[dai] = colors
+
+    for dai, hanrei_c in DAI_COLOR_ALIASES.items():
+        dai_color[dai] = sai_colors[hanrei_c]
+
+    return dai_color
+
+
 def main(output_dir: pathlib.Path):
     if output_dir.exists() and not output_dir.is_dir():
         raise RuntimeError(
@@ -213,20 +218,17 @@ def main(output_dir: pathlib.Path):
             REGISTRY.register(obj)
 
     colors = get_colors_from_lyr(LAYER_FILE)
-    shokusei_colors = {
-        code: colors[alias] for code, alias in SHOKUSEI_COLOR_ALIASES.items()
-    }
 
     sai_fill_style, _ = generate_mapbox_style(colors, "H")
     chu_fill_style, _ = generate_mapbox_style(pick_color_for_chu(colors), "C")
-    shokusei_fill_style, _ = generate_mapbox_style(shokusei_colors, "S")
+    dai_fill_style, _ = generate_mapbox_style(pick_color_for_dai(colors), "D")
 
     def dump(path, style):
         json.dump(style, open(path, "w"), separators=(",", ":"))
 
     dump(output_dir / "vg67_sai_style.json", sai_fill_style)
     dump(output_dir / "vg67_chu_style.json", chu_fill_style)
-    dump(output_dir / "vg67_shokusei_style.json", shokusei_fill_style)
+    dump(output_dir / "vg67_dai_style.json", dai_fill_style)
 
 
 if __name__ == "__main__":

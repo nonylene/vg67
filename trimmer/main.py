@@ -11,35 +11,12 @@ import shapely
 import shapely.ops
 from attr import dataclass
 
-# initialize map http://gis.biodic.go.jp/webgis/sc-016.html
-_DAI_SHOKUSEI_MAP_SEED = {
-    0: range(0, 1),  # Unknown code: 9999
-    1: range(1, 4),
-    2: range(4, 8),
-    3: range(8, 11),
-    4: range(11, 22),
-    5: range(22, 27),
-    6: range(27, 40),
-    7: range(40, 47),
-    8: range(47, 54),
-    9: range(54, 58),
-    10: range(58, 59),
-    # 11 -> Water (original)
-    # 19 -> Paddy field
-}
-DAI_SHOKUSEI_MAP = {}
-
-
-for shokusei, rng in _DAI_SHOKUSEI_MAP_SEED.items():
-    for dai in rng:
-        DAI_SHOKUSEI_MAP[dai] = shokusei
-
 
 class Kubun(Enum):
     # chu kubun
     CHU = auto()
-    # shokusei kubun
-    SHOKUSEI = auto()
+    # dai kubun
+    DAI = auto()
 
 
 @dataclass
@@ -54,21 +31,21 @@ class KubunConfig:
     code_merge_minimum_ratio: float
 
 
-SHOKUSEI_CONFIG = KubunConfig(
-    kubun=Kubun.SHOKUSEI,
-    key="S",
+DAI_CONFIG = KubunConfig(
+    kubun=Kubun.DAI,
+    key="D",
     # 750m ^2
     force_merge_area_limit=0.00001 * 750 * 0.00001 * 750,
-    # 150m
-    force_merge_simplify_limit=0.00001 * 150,
-    # 5km * 1000m
-    force_merge_thinness_area_step_1=0.00001 * 1000 * 0.00001 * 5 * 1000,
-    # 15km * 1000m
-    force_merge_thinness_area_step_2=0.00001 * 1000 * 0.00001 * 15 * 1000,
+    # 200m
+    force_merge_simplify_limit=0.00001 * 200,
+    # 4km * 1000m
+    force_merge_thinness_area_step_1=0.00001 * 1000 * 0.00001 * 4 * 1000,
+    # 12km * 1000m
+    force_merge_thinness_area_step_2=0.00001 * 1000 * 0.00001 * 12 * 1000,
     # 30km * 1000m
     force_merge_thinness_area_step_3=0.00001 * 1000 * 0.00001 * 30 * 1000,
-    # 13% common border required
-    code_merge_minimum_ratio=0.13,
+    # 15% common border required
+    code_merge_minimum_ratio=0.15,
 )
 
 CHU_CONFIG = KubunConfig(
@@ -84,19 +61,21 @@ CHU_CONFIG = KubunConfig(
     force_merge_thinness_area_step_2=0.00001 * 1000 * 0.00001 * 1000,
     # 3km * 1000m
     force_merge_thinness_area_step_3=0.00001 * 1000 * 0.00001 * 3 * 1000,
-    # 10% common border required
+    # 15% common border required
     code_merge_minimum_ratio=0.15,
 )
 
 
-def shokusei_kubun(code: int):
+def dai_kubun(code: int):
     if code == 580600:
-        return 11
+        # Water (original)
+        return 91
 
     if code == 570400:
-        return 19
+        # Paddy field
+        return 99
 
-    return DAI_SHOKUSEI_MAP[code // 10000]
+    return code // 10000
 
 
 def calculate_border_lengthes(geoms: list[shapely.Polygon]) -> list[list[float]]:
@@ -153,7 +132,7 @@ def get_code_polygons(
         if config.kubun == Kubun.CHU:
             code = feature["properties"]["H"] // 100
         else:
-            code = shokusei_kubun(feature["properties"]["H"])
+            code = dai_kubun(feature["properties"]["H"])
         shape = shapely.geometry.shape(feature["geometry"])
         match shape.geom_type:
             case "Polygon":
@@ -315,8 +294,8 @@ def main(geojson_pattern: str, output_dir: pathlib.Path, kubun: Kubun):
     match kubun:
         case Kubun.CHU:
             config = CHU_CONFIG
-        case Kubun.SHOKUSEI:
-            config = SHOKUSEI_CONFIG
+        case Kubun.DAI:
+            config = DAI_CONFIG
 
     files = glob.glob(geojson_pattern, recursive=True)
 
@@ -350,23 +329,21 @@ if __name__ == "__main__":
         help="Target kubun",
         required=True,
         type=str,
-        choices={"chu", "shokusei"},
+        choices={"chu", "dai"},
     )
     args = parser.parse_args()
 
     match args.kubun:
         case "chu":
             kubun = Kubun.CHU
-        case "shokusei":
-            kubun = Kubun.SHOKUSEI
+        case "dai":
+            kubun = Kubun.DAI
 
     if args.out is None:
         match kubun:
             case Kubun.CHU:
                 output = pathlib.Path(__file__).parent / "../data/geojson-trimmed/chu"
-            case Kubun.SHOKUSEI:
-                output = (
-                    pathlib.Path(__file__).parent / "../data/geojson-trimmed/shokusei"
-                )
+            case Kubun.DAI:
+                output = pathlib.Path(__file__).parent / "../data/geojson-trimmed/dai"
 
     main(args.geojson_pattern, output, kubun)
