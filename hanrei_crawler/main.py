@@ -155,7 +155,7 @@ def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
             "cc": roman_to_number[legend1.class_code],
             "n": legend1.name,
         }
-        shokusei[roman_to_number[legend1.class_code]] = legend1.class_name
+        shokusei[roman_to_number[legend1.class_code]] = {"n": legend1.class_name}
         if legend1.second is not None:
             for legend2 in legend1.second:
                 chu[int(legend1.code + legend2.code)] = {
@@ -170,25 +170,21 @@ def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
     json.dump(
         shokusei,
         open(names_dir / "shokusei_raw.json", "w"),
-        separators=(",", ":"),
         ensure_ascii=False,
     )
     json.dump(
         dai,
         open(names_dir / "dai_raw.json", "w"),
-        separators=(",", ":"),
         ensure_ascii=False,
     )
     json.dump(
         chu,
         open(names_dir / "chu_raw.json", "w"),
-        separators=(",", ":"),
         ensure_ascii=False,
     )
     json.dump(
         sai,
         open(names_dir / "sai_raw.json", "w"),
-        separators=(",", ":"),
         ensure_ascii=False,
     )
 
