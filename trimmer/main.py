@@ -68,7 +68,7 @@ CHU_CONFIG = KubunConfig(
 
 def dai_kubun(code: int):
     if code == 580600:
-        # Water (original)
+        # Water area
         return 91
 
     if code == 570400:
