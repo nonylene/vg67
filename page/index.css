@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+div.popup {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.legendParent {
+  font-size: 0.7rem;
+  color: gray;
+  margin-block-start: 0;
+  margin-block-end: 0.35em;
+}
+
+.legendCode {
+  font-size: 1rem;
+  color: #494949;
+  margin-block-start: 0;
+  margin-block-end: 0.3em;
+}
+
+.legendName {
+  margin-block-start: 0;
+  margin-block-end: 0.2em;
+  font-size: 1.2rem;
+}

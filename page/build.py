@@ -4,20 +4,37 @@ import tomllib
 
 
 def build_variables(data_dir: pathlib.Path) -> dict[str, str]:
+    legend_dai = json.load(open(data_dir / "hanrei/names/dai.json"))
+    legend_chu = json.load(open(data_dir / "hanrei/names/chu.json"))
+    legend_sai = json.load(open(data_dir / "hanrei/names/sai.json"))
+    legend_shokusei = json.load(open(data_dir / "hanrei/names/shokusei.json"))
+
     # special
-    mapbox_styles = json.load(open(data_dir / "style/vg67_sai_style.json"))
+    mapbox_sai_styles = json.load(open(data_dir / "style/vg67_sai_style.json"))
     mapbox_dai_styles = json.load(open(data_dir / "style/vg67_dai_style.json"))
     mapbox_chu_styles = json.load(open(data_dir / "style/vg67_chu_style.json"))
 
     variables = {
-        '"__TEMPLATE_FILL_COLOR_MATCHER__"': json.dumps(
-            mapbox_styles, separators=(",", ":")
+        '"__TEMPLATE_FILL_COLOR_SAI_MATCHER__"': json.dumps(
+            mapbox_sai_styles, separators=(",", ":")
         ),
         '"__TEMPLATE_FILL_COLOR_CHU_MATCHER__"': json.dumps(
             mapbox_chu_styles, separators=(",", ":")
         ),
         '"__TEMPLATE_FILL_COLOR_DAI_MATCHER__"': json.dumps(
             mapbox_dai_styles, separators=(",", ":")
+        ),
+        '"__TEMPLATE_LEGEND_SAI__"': json.dumps(
+            legend_sai, separators=(",", ":"), ensure_ascii=False
+        ),
+        '"__TEMPLATE_LEGEND_CHU__"': json.dumps(
+            legend_chu, separators=(",", ":"), ensure_ascii=False
+        ),
+        '"__TEMPLATE_LEGEND_DAI__"': json.dumps(
+            legend_dai, separators=(",", ":"), ensure_ascii=False
+        ),
+        '"__TEMPLATE_LEGEND_SHOKUSEI__"': json.dumps(
+            legend_shokusei, separators=(",", ":"), ensure_ascii=False
         ),
     }
 
@@ -40,7 +57,7 @@ def template(path: pathlib.Path, variables: dict[str, str]) -> str:
     return content
 
 
-TEMPLATES = ["index.html"]
+TEMPLATES = ["index.html", "index.js", "index.css"]
 
 data_dir = pathlib.Path(__file__).parent.parent / "data"
 out_dir = data_dir / "page"
