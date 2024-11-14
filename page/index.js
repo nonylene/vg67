@@ -3,8 +3,8 @@ mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
 const map = new mapboxgl.Map({
   container: 'map',
   center: [139.7669975, 35.6812505], // Tokyo
-  style: "mapbox://styles/mapbox/standard?optimize=true",
-  zoom: 10,
+  style: "mapbox://styles/windfiber/cm3hcr9yl007301sq96vwf55b",
+  zoom: 11,
   minZoom: 6,
   language: 'ja',
   customAttribution: [`Source: <a href="https://www.biodic.go.jp/kiso/vg/vg_kiso.html">1/2.5万植生図GISデータ(環境省生物多様性センター)</a> を加工して作成`],
@@ -19,6 +19,12 @@ map.addControl(
   })
 );
 
+const mobile = navigator.userAgentData.mobile;
+
+const defaultFillDai = 0.5;
+const defaultFillChu = 0.5;
+const defaultFillSai = 0.55;
+
 const legendDai = "__TEMPLATE_LEGEND_DAI__";
 const legendChu = "__TEMPLATE_LEGEND_CHU__";
 const legendSai = "__TEMPLATE_LEGEND_SAI__";
@@ -31,6 +37,44 @@ const fillColorMatcherDai = "__TEMPLATE_FILL_COLOR_DAI_MATCHER__";
 const daiSpecialTransform = {
   91: 58, // Water area
   99: 57, // Paddy field
+}
+
+const updateFillOpacityDai = (map, daiCode) => {
+  if (mobile) {
+    // do nothing
+    return
+  }
+  // daiCode should be raw; before transformed
+  if (daiCode == null) {
+    map.setPaintProperty('vg67-dai', 'fill-opacity', defaultFillDai);
+  } else {
+    map.setPaintProperty('vg67-dai', 'fill-opacity', ["match", ["get", "D"], [daiCode], 1, 0.3])
+  }
+}
+
+const updateFillOpacityChu = (map, chuCode) => {
+  if (mobile) {
+    // do nothing
+    return
+  }
+  // daiCode should be raw; before transformed
+  if (chuCode == null) {
+    map.setPaintProperty('vg67-chu', 'fill-opacity', defaultFillChu);
+  } else {
+    map.setPaintProperty('vg67-chu', 'fill-opacity', ["match", ["get", "C"], [chuCode], 0.9, 0.3])
+  }
+}
+
+const updateFillOpacitySai = (map, saiCode) => {
+  if (mobile) {
+    // do nothing
+    return
+  }
+  if (saiCode == null) {
+    map.setPaintProperty('vg67-sai', 'fill-opacity', defaultFillSai);
+  } else {
+    map.setPaintProperty('vg67-sai', 'fill-opacity', ["match", ["get", "H"], [saiCode], 0.9, 0.3])
+  }
 }
 
 const getLegendsSai = (saiCode) => {
@@ -80,29 +124,34 @@ const getLegendsDai = (daiCode) => {
 }
 
 const formatCode = (code) => {
-  if (code < 100) {
+  if (code < 99) {
     // dai
     return String(code).padStart(2, '0') + '****'
   }
-  if (code < 10000) {
-    // chu
+  if (code < 9999) {
+    // chu (9999 -> no information)
     return String(code).padStart(4, '0') + '**'
   }
   // sai
   return String(code).padStart(6, '0')
 }
 
-const renderHTML = (code, legends) => {
+const renderHTML = (code, legends, rgb) => {
   const legend = legends[0];
   const parentsText = legends.slice(1).reverse().map(t => t.name).join(" > ") + " >";
 
   return `
   <div class="popup">
     <p class="legendParent">${parentsText}</p> 
-    <p class="legendCode">${formatCode(code)}</p>
+    <p class="legendCode"><span class="legendColorBox" style="background-color: ${rgb};"></span> ${formatCode(code)}</p>
     <p class="legendName">${legend.name}</p>
   </div>
   `
+}
+
+const eventFillColorToRGB = (e) => {
+  const rgba = e.features[0].layer.paint["fill-color"];
+  return `rgb(${Math.floor(rgba.r * 255)} ${Math.floor(rgba.g * 255)} ${Math.floor(rgba.b * 255)})`
 }
 
 map.on('load', () => {
@@ -128,10 +177,10 @@ map.on('load', () => {
       122, 24, 154, 46,
     ],
   });
-  map.addSource('vg67-detail', {
+  map.addSource('vg67-sai', {
     type: 'vector',
     tiles: [
-      "__TEMPLATE_MAPTILE_DETAIL_URL__",
+      "__TEMPLATE_MAPTILE_SAI_URL__",
     ],
     minzoom: 9,
     maxzoom: 12,
@@ -149,7 +198,7 @@ map.on('load', () => {
     'maxzoom': 8,
     "paint": {
       "fill-color": fillColorMatcherDai,
-      "fill-opacity": 0.5,
+      "fill-opacity": defaultFillDai,
       "fill-outline-color": "rgba(0,0,0,0)",
     },
   });
@@ -162,19 +211,19 @@ map.on('load', () => {
     'maxzoom': 10,
     "paint": {
       "fill-color": fillColorMatcherChu,
-      "fill-opacity": 0.5,
+      "fill-opacity": defaultFillChu,
       "fill-outline-color": "rgba(0,0,0,0)",
     },
   });
   map.addLayer({
-    'id': 'vg67-detail',
+    'id': 'vg67-sai',
     'type': 'fill',
-    'source': 'vg67-detail',
+    'source': 'vg67-sai',
     'source-layer': 'vg67_detail',
     'minzoom': 10,
     "paint": {
       "fill-color": fillColorMatcher,
-      "fill-opacity": 0.55,
+      "fill-opacity": defaultFillSai,
       "fill-outline-color": [
         "step", ["zoom"],
         "rgba(0,0,0,0)",
@@ -183,38 +232,51 @@ map.on('load', () => {
     },
   });
 
-  map.on('click', 'vg67-detail', (e) => {
+  map.on('click', 'vg67-sai', (e) => {
     const code = e.features[0].properties["H"]
+    updateFillOpacitySai(map, code);
+    const rgb = eventFillColorToRGB(e);
     const legends = getLegendsSai(code);
-    new mapboxgl.Popup()
+    const popup = new mapboxgl.Popup()
       .setLngLat(e.lngLat)
-      .setHTML(renderHTML(code, legends))
+      .setHTML(renderHTML(code, legends, rgb))
       .addTo(map);
+
+    popup.on('close', () => {
+      updateFillOpacitySai(map, null);
+    })
   });
 
   map.on('click', 'vg67-chu', (e) => {
     const code = e.features[0].properties["C"]
+    updateFillOpacityChu(map, code);
+    const rgb = eventFillColorToRGB(e);
     const legends = getLegendsChu(code);
-    new mapboxgl.Popup()
+    const popup = new mapboxgl.Popup()
       .setLngLat(e.lngLat)
-      .setHTML(renderHTML(code, legends))
+      .setHTML(renderHTML(code, legends, rgb))
       .addTo(map);
+
+    popup.on('close', () => {
+      updateFillOpacityChu(map, null);
+    })
   });
 
   map.on('click', 'vg67-dai', (e) => {
     let code = e.features[0].properties["D"];
-    map.setPaintProperty('vg67-dai', 'fill-opacity', ["match", ["get", "D"], [code], 1, 0.3])
+    updateFillOpacityDai(map, code);
+    const rgb = eventFillColorToRGB(e);
     if (code in daiSpecialTransform) {
       code = daiSpecialTransform[code];
     }
     const legends = getLegendsDai(code);
     const popup = new mapboxgl.Popup()
       .setLngLat(e.lngLat)
-      .setHTML(renderHTML(code, legends))
+      .setHTML(renderHTML(code, legends, rgb))
       .addTo(map);
 
     popup.on('close', () => {
-      map.setPaintProperty('vg67-dai', 'fill-opacity', 0.55)
+      updateFillOpacityDai(map, null);
     })
   });
 
