@@ -48,7 +48,7 @@ const updateFillOpacityDai = (map, daiCode) => {
   if (daiCode == null) {
     map.setPaintProperty('vg67-dai', 'fill-opacity', defaultFillDai);
   } else {
-    map.setPaintProperty('vg67-dai', 'fill-opacity', ["match", ["get", "D"], [daiCode], 1, 0.3])
+    map.setPaintProperty('vg67-dai', 'fill-opacity', ["case", ["==", ["get", "D"], daiCode], 0.95, 0.3])
   }
 }
 
@@ -61,7 +61,7 @@ const updateFillOpacityChu = (map, chuCode) => {
   if (chuCode == null) {
     map.setPaintProperty('vg67-chu', 'fill-opacity', defaultFillChu);
   } else {
-    map.setPaintProperty('vg67-chu', 'fill-opacity', ["match", ["get", "C"], [chuCode], 0.9, 0.3])
+    map.setPaintProperty('vg67-chu', 'fill-opacity', ["case", ["==", ["get", "C"], chuCode], 0.9, 0.3])
   }
 }
 
@@ -73,7 +73,7 @@ const updateFillOpacitySai = (map, saiCode) => {
   if (saiCode == null) {
     map.setPaintProperty('vg67-sai', 'fill-opacity', defaultFillSai);
   } else {
-    map.setPaintProperty('vg67-sai', 'fill-opacity', ["match", ["get", "H"], [saiCode], 0.9, 0.3])
+    map.setPaintProperty('vg67-sai', 'fill-opacity', ["case", ["==", ["get", "H"], saiCode], 0.9, 0.3])
   }
 }
 
