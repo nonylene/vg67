@@ -17,7 +17,7 @@ div.popup {
 
 .legendParent {
   font-size: 0.7rem;
-  color: gray;
+  color: #7b7b7b;
   margin-block-start: 0;
   margin-block-end: 0.23rem;
 }
@@ -29,12 +29,22 @@ div.popup {
   margin-block-end: 0.3rem;
 }
 
-.legendColorBox {
+input.legendColorBox {
   display: inline-block;
+  border: none;
+  padding: 0;
   width: 0.9rem;
   height: 0.9rem;
+  cursor: pointer;
 }
 
+input.legendColorBox::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input.legendColorBox::-webkit-color-swatch {
+  border: none;
+}
 
 .legendName {
   margin-block-start: 0;
