@@ -15,18 +15,18 @@ div.popup {
   overflow-wrap: break-word;
 }
 
-.legendParent {
-  font-size: 0.7rem;
+.legendParents {
+  font-size: 0.8rem;
   color: #7b7b7b;
   margin-block-start: 0;
-  margin-block-end: 0.23rem;
+  margin-block-end: 0.5rem;
 }
 
 .legendCode {
   font-size: 1rem;
   color: #494949;
   margin-block-start: 0;
-  margin-block-end: 0.3rem;
+  margin-block-end: 0.4rem;
 }
 
 input.legendColorBox {
@@ -50,4 +50,37 @@ input.legendColorBox::-webkit-color-swatch {
   margin-block-start: 0;
   margin-block-end: 0.1rem;
   font-size: 1.2rem;
+}
+
+div.wrapper {
+  box-sizing: border-box;
+  top: 0;
+  position: absolute;
+  padding: 8px;
+}
+
+div#legendWrapper {
+  width: 350px;
+  display: none;
+}
+
+/* mobile */
+@media (max-width: 600px) {
+  div.wrapper {
+    width: 100% !important;
+  }
+}
+
+div.tile {
+  background-color: #FFFFFF;
+  padding: 12px;
+  border-radius: 3px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.1);
+}
+
+span#legendTitle {
+  font-size: 1.1rem;
+  font-weight: bold;
 }

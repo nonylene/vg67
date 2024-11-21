@@ -16,7 +16,8 @@ map.addControl(
       enableHighAccuracy: true
     },
     trackUserLocation: true,
-  })
+  }),
+  "bottom-right",
 );
 
 const mobile = navigator.userAgentData.mobile;
@@ -69,10 +70,6 @@ const PROPERTY_KEY = {
 }
 
 const updateFillOpacity = (code, kubun) => {
-  if (mobile) {
-    // do nothing
-    return
-  }
   // code should be raw; before transformed
   if (code == null) {
     map.setPaintProperty(LAYER_NAME[kubun], 'fill-opacity', DEFAULT_FILL_OPACITY[kubun], paintPropertyOptions);
@@ -83,6 +80,12 @@ const updateFillOpacity = (code, kubun) => {
       paintPropertyOptions
     )
   }
+}
+
+const resetFillOpacity = () => {
+  Object.keys(LAYER_NAME).forEach(kubun => {
+    map.setPaintProperty(LAYER_NAME[kubun], 'fill-opacity', DEFAULT_FILL_OPACITY[kubun], paintPropertyOptions);
+  })
 }
 
 const getLegendsSai = (saiCode) => {
@@ -176,6 +179,45 @@ const updateMatcherValue = (matcher, rawCode, value) => {
   matcher.splice(2, 0, [rawCode], value);
 }
 
+const DOUBLE_TAP_MS = 250;
+let tapTimer = null;
+let doubleTapping = false
+
+// click event will not fire on double click / tap
+const handleSingleClick = (func) => {
+  if (!mobile) {
+    func()
+    return
+  }
+
+  if (!doubleTapping) {
+    // first tap!
+    setTimeout(() => {
+      if (!doubleTapping) {
+        func();
+      }
+      // else: A second tap fired after the first tap
+    }, DOUBLE_TAP_MS);
+  }
+  // else: This event should be the second tap (may happen when there is a gap between DOUBLE_TAP_MS and native double tap)
+}
+
+// touch events only fires on mobile
+const handleTouchStart = () => {
+  if (tapTimer != null) {
+    doubleTapping = true;
+    // Disable setting doubleTapping = false after the first tap
+    clearTimeout(tapTimer);
+  }
+  // else: This event should be the first tap
+
+  tapTimer = setTimeout(() => {
+    doubleTapping = false;
+    tapTimer = null;
+  }, DOUBLE_TAP_MS - 5);
+}
+
+
 const onPickColorChange = (value, rawCode, kubun) => {
   switch (kubun) {
     case SAI:
@@ -193,17 +235,26 @@ const onPickColorChange = (value, rawCode, kubun) => {
   }
 }
 
-const renderHTML = (code, rawCode, legends, rgb, kubun) => {
+const hideHanrei = () => {
+  document.querySelector("div#legendWrapper").style.display = "none";
+  document.querySelector("div#titleWrapper").style.display = "block";
+}
+
+const showHanrei = (code, rawCode, legends, rgb, kubun) => {
   const legend = legends[0];
   const parentsText = legends.slice(1).reverse().map(t => t.name).join(" > ") + " >";
 
-  return `
-  <div class="popup">
-    <p class="legendParent">${parentsText}</p> 
-    <p class="legendCode"><input type="color" title="Click to change the fill color" class="legendColorBox" value="${rgb}" onChange="onPickColorChange(this.value, ${rawCode}, ${kubun})" />&nbsp;${formatCode(code)}</span></p>
-    <p class="legendName">${legend.name}</p>
-  </div>
-  `;
+  const template = document.querySelector("#legendTemplate")
+  const clone = template.content.cloneNode(true);
+  clone.querySelector(".legendParents").textContent = parentsText;
+  clone.querySelector(".legendCodeNumber").textContent = formatCode(code);
+  clone.querySelector(".legendName").textContent = legend.name;
+  clone.querySelector(".legendColorBox").value = rgb;
+  clone.querySelector("input.legendColorBox").addEventListener('change', (event) => onPickColorChange(event.target.value, rawCode, kubun));
+
+  document.querySelector("div#titleWrapper").style.display = "none";
+  document.querySelector("div#legend").replaceWith(clone)
+  document.querySelector("div#legendWrapper").style.display = "block";
 }
 
 const eventFillColorToRGB = (e) => {
@@ -214,20 +265,16 @@ const eventFillColorToRGB = (e) => {
 
 const onMapClick = (e, kubun) => {
   const rawCode = e.features[0].properties[PROPERTY_KEY[kubun]];
-  updateFillOpacity(rawCode, kubun);
   let code = rawCode;
-  const rgb = eventFillColorToRGB(e);
   if (rawCode in daiSpecialTransform) {
     code = daiSpecialTransform[rawCode];
   }
-  const legends = getLegends(code, kubun);
-  const popup = new mapboxgl.Popup()
-    .setLngLat(e.lngLat)
-    .setHTML(renderHTML(code, rawCode, legends, rgb, kubun))
-    .addTo(map);
+  const rgb = eventFillColorToRGB(e);
+  const legends = getLegends(rawCode, kubun);
 
-  popup.on('close', () => {
-    updateFillOpacity(null, kubun);
+  handleSingleClick(() => {
+    updateFillOpacity(rawCode, kubun);
+    showHanrei(code, rawCode, legends, rgb, kubun)
   })
 }
 
@@ -309,6 +356,7 @@ map.on('load', () => {
     },
   });
 
+
   map.on('click', 'vg67-sai', (e) => {
     onMapClick(e, SAI);
   });
@@ -321,4 +369,15 @@ map.on('load', () => {
     onMapClick(e, DAI);
   });
 
+  map.on('click', (e) => {
+    const features = map.queryRenderedFeatures(e.point);
+    if (features.length === 0) {
+      handleSingleClick(() => {
+        resetFillOpacity();
+        hideHanrei();
+      });
+    }
+  });
+
+  map.on('touchstart', handleTouchStart);
 });

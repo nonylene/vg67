@@ -12,6 +12,24 @@
 
 <body>
   <div id="map"></div>
+  <div id="titleWrapper" class="wrapper">
+    <div id="titleTile" class="tile">
+      <span id="legendTitle">シームレス植生図 V1</span>
+    </div>
+  </div>
+  <div id="legendWrapper" class="wrapper">
+    <div id="legendTile" class="tile">
+      <div id="legend"></div>
+      <template id="legendTemplate">
+        <div id="legend">
+          <p class="legendParents">a > b ></p>
+          <p class="legendCode"><input type="color" title="Click to change the fill color"
+              class="legendColorBox" />&nbsp;<span class="legendCodeNumber">001113</span></p>
+          <p class="legendName">市街地</p>
+        </div>
+      </template>
+    </div>
+  </div>
   <script src="./index.js"></script>
 </body>
 
