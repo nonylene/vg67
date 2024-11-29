@@ -14,7 +14,7 @@
   <div id="map"></div>
   <div id="titleWrapper" class="wrapper">
     <div id="titleTile" class="tile">
-      <span id="legendTitle">シームレス植生図 V1</span>
+      <span id="title">シームレス植生図 V1</span>
     </div>
   </div>
   <div id="legendWrapper" class="wrapper">
@@ -22,10 +22,32 @@
       <div id="legend"></div>
       <template id="legendTemplate">
         <div id="legend">
-          <p class="legendParents">a > b ></p>
-          <p class="legendCode"><input type="color" title="Click to change the fill color"
-              class="legendColorBox" />&nbsp;<span class="legendCodeNumber">001113</span></p>
-          <p class="legendName">市街地</p>
+          <div class="legendParents">a > b ></div>
+          <div class="legendCode">
+            <input type="color" title="Click to change the fill color" class="legendColorBox" />
+            <span class="legendCodeNumber">001113</span>
+          </div>
+          <div class="legendName">市街地</div>
+        </div>
+      </template>
+      <div id="legendExpList"></div>
+      <template id="legendExpListTemplate">
+        <div id="legendExpList">
+          <div class="currentLegendExp"></div>
+          <details class="legendExpDetails">
+            <summary>Parent legends</summary>
+          </details>
+          <div class="legendExpCite">
+            出典: <a href="http://gis.biodic.go.jp/webgis/sc-016.html">「統一凡例（植生区分・大区分一覧表）」</a><br />(環境省生物多様性センター)
+          </div>
+        </div>
+      </template>
+      <template id="legendExpTemplate">
+        <div class="legendExp">
+          <div class="legendExpTitle"><span class="legendExpCodeNumber">0011**</span>&nbsp;<span
+              class="legendExpName">市街地</span></div>
+          <img class="legendExpImg" />
+          <p class="legendExpText">ここに説明文が入ります</p>
         </div>
       </template>
     </div>

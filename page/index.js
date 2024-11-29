@@ -1,5 +1,6 @@
 mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
 
+// Build map as fast as possible
 const map = new mapboxgl.Map({
   container: 'map',
   center: [139.7669975, 35.6812505], // Tokyo
@@ -97,6 +98,7 @@ const getLegendsSai = (saiCode) => {
     const name = legendSai[String(saiCode)];
     const saiLegend = {
       "name": name,
+      "code": saiCode,
       "linkCode": saiCode,
     }
     return [saiLegend, ...parents]
@@ -112,6 +114,7 @@ const getLegendsChu = (chuCode) => {
     const name = legendChu[String(chuCode)];
     const chuLegend = {
       "name": name,
+      "code": chuCode,
       "linkCode": chuCode * 100,
     }
     return [chuLegend, ...parents]
@@ -119,13 +122,15 @@ const getLegendsChu = (chuCode) => {
 
 }
 
-const getLegendsDai = (daiCode) => {
-  const dai = legendDai[String(daiCode)];
+const getLegendsDai = (daiRawCode) => {
+  const daiCode = daiRawCode in daiSpecialTransform ? daiSpecialTransform[daiRawCode] : daiRawCode;
+  const dai = legendDai[String(daiRawCode)];
   const shokuseiName = legendShokusei[String(dai["cc"])];
   const daiName = dai["n"];
   return [
     {
       "name": daiName,
+      "code": daiCode,
       "linkCode": daiCode * 10000,
     },
     {
@@ -134,14 +139,14 @@ const getLegendsDai = (daiCode) => {
   ]
 }
 
-const getLegends = (code, kubun) => {
+const getLegends = (rawCode, kubun) => {
   switch (kubun) {
     case SAI:
-      return getLegendsSai(code)
+      return getLegendsSai(rawCode)
     case CHU:
-      return getLegendsChu(code)
+      return getLegendsChu(rawCode)
     case DAI:
-      return getLegendsDai(code)
+      return getLegendsDai(rawCode)
   }
 
   return null // unexpected
@@ -185,6 +190,7 @@ let doubleTapping = false
 
 // click event will not fire on double click / tap
 const handleSingleClick = (func) => {
+  // PC users does not perform double click on the map normally
   if (!mobile) {
     func()
     return
@@ -199,7 +205,7 @@ const handleSingleClick = (func) => {
       // else: A second tap fired after the first tap
     }, DOUBLE_TAP_MS);
   }
-  // else: This event should be the second tap (may happen when there is a gap between DOUBLE_TAP_MS and native double tap)
+  // else: The second tap (may happen when there is a gap between DOUBLE_TAP_MS and native double tap)
 }
 
 // touch events only fires on mobile
@@ -235,12 +241,21 @@ const onPickColorChange = (value, rawCode, kubun) => {
   }
 }
 
+const fetchExplanation = async (fullCode) => {
+  const resp = await fetch(`http://localhost:8000/hanrei/explanation/${fullCode}.json`);
+  return resp.json();
+}
+
+const toImageURL = (filename) => {
+  return filename != null ? `http://localhost:8000/hanrei/images/${filename}` : null
+}
+
 const hideHanrei = () => {
   document.querySelector("div#legendWrapper").style.display = "none";
   document.querySelector("div#titleWrapper").style.display = "block";
 }
 
-const showHanrei = (code, rawCode, legends, rgb, kubun) => {
+const showHanreiTile = (code, rawCode, legends, rgb, kubun) => {
   const legend = legends[0];
   const parentsText = legends.slice(1).reverse().map(t => t.name).join(" > ") + " >";
 
@@ -254,7 +269,45 @@ const showHanrei = (code, rawCode, legends, rgb, kubun) => {
 
   document.querySelector("div#titleWrapper").style.display = "none";
   document.querySelector("div#legend").replaceWith(clone)
-  document.querySelector("div#legendWrapper").style.display = "block";
+  document.querySelector("div#legendWrapper").style.display = "flex";
+
+  // remove the last element for descriptions
+  const promises = legends.slice(0, -1).map(async ({ code, linkCode, name }) => {
+    const { image, text } = await fetchExplanation(linkCode);
+    return { codeRepr: formatCode(code), imageURL: toImageURL(image), text, name }
+  })
+
+  const legendListTemplate = document.querySelector("#legendExpListTemplate")
+  const listClone = legendListTemplate.content.cloneNode(true);
+  if (promises.length <= 1) {
+    listClone.querySelector(".legendExpDetails").style.display = "none";
+  }
+
+  const legendExpTemplate = document.querySelector("#legendExpTemplate")
+  Promise.all(promises).then(c => {
+    c.map(({ codeRepr, imageURL, text, name }, idx) => {
+      const clone = legendExpTemplate.content.cloneNode(true);
+      if (idx == 0) {
+        // First element does not need to show title
+        clone.querySelector(".legendExpTitle").style.display = "none";
+      } else {
+        clone.querySelector(".legendExpCodeNumber").textContent = codeRepr;
+        clone.querySelector(".legendExpName").textContent = name;
+        clone.querySelector(".legendExpTitle").style.display = "block";
+      }
+      clone.querySelector(".legendExpImg").src = imageURL ?? "";
+      clone.querySelector(".legendExpImg").style.display = imageURL != null ? "inline" : "none"
+      clone.querySelector(".legendExpText").textContent = text;
+      return clone
+    }).forEach((element, idx) => {
+      if (idx == 0) {
+        listClone.querySelector(".currentLegendExp").appendChild(element);
+      } else {
+        listClone.querySelector(".legendExpDetails").appendChild(element);
+      }
+    })
+    document.querySelector("div#legendExpList").replaceWith(listClone);
+  }).catch(console.error)
 }
 
 const eventFillColorToRGB = (e) => {
@@ -263,18 +316,42 @@ const eventFillColorToRGB = (e) => {
   return `#${rgbToHex(rgba.r)}${rgbToHex(rgba.g)}${rgbToHex(rgba.b)}`
 }
 
+const showPopup = (lngLat, name) => {
+  if (mobile) {
+    return
+  }
+
+  const html = `<div class="legendPopup">${name}</div>`
+
+  const popup = new mapboxgl.Popup()
+    .setLngLat(lngLat)
+    .setHTML(html)
+    .addTo(map);
+
+  // Set onclick maunally because on('close') event fires even if the popup is closed programatically
+  // When we click the outside of popup, it will be closed programatically, and opacity reset process will result to waste of energy
+  // since map's onclick event will be fired right after this event
+  popup.getElement().querySelector("button.mapboxgl-popup-close-button").onclick = (e) => {
+    resetFillOpacity();
+    popup.remove();
+    hideHanrei();
+  }
+}
+
 const onMapClick = (e, kubun) => {
   const rawCode = e.features[0].properties[PROPERTY_KEY[kubun]];
+  const lngLat = e.lngLat;
+  const rgb = eventFillColorToRGB(e);
+  const legends = getLegends(rawCode, kubun);
   let code = rawCode;
   if (rawCode in daiSpecialTransform) {
     code = daiSpecialTransform[rawCode];
   }
-  const rgb = eventFillColorToRGB(e);
-  const legends = getLegends(rawCode, kubun);
 
   handleSingleClick(() => {
     updateFillOpacity(rawCode, kubun);
-    showHanrei(code, rawCode, legends, rgb, kubun)
+    showPopup(lngLat, legends[0].name);
+    showHanreiTile(code, rawCode, legends, rgb, kubun)
   })
 }
 
