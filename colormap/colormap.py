@@ -46,8 +46,6 @@ class RGBA:
         )
 
 
-FALLBACK_COLOR = RGBA(0, 0, 0, 1)
-
 ADDITIONAL_COLORS = {
     9999: RGBA(0, 0, 0, 0),
     40106: RGBA(112, 168, 0, 1),  # ダケカンバ‐エゾマツ群落（風倒跡地自然再生林）
@@ -150,33 +148,6 @@ def get_colors_from_lyr(layer_file_path: str) -> dict[int, Tuple[RGBA, RGBA]]:
     return colors
 
 
-def generate_mapbox_style(
-    colors: dict[int, Tuple[RGBA, RGBA]], key: str
-) -> Tuple[list[str | list[int]], list[str | list[int]]]:
-    fill_colors: dict[RGBA, list[int]] = defaultdict(list)
-    outline_colors: dict[RGBA, list[int]] = defaultdict(list)
-
-    for hanrei_c, (fill, outline) in colors.items():
-        fill_colors[fill].append(hanrei_c)
-        outline_colors[outline].append(hanrei_c)
-
-    def _mapbox_style(c: dict[RGBA, list[str]]) -> list[str | list[str]]:
-        mapbox_style = [
-            "match",
-            ["get", key],
-        ]
-
-        for color, values in c.items():
-            mapbox_style.append(values)
-            mapbox_style.append(color.mapbox_style())
-
-        mapbox_style.append(FALLBACK_COLOR.mapbox_style())
-
-        return mapbox_style
-
-    return _mapbox_style(fill_colors), _mapbox_style(outline_colors)
-
-
 def pick_color_for_chu(
     sai_colors: dict[int, Tuple[RGBA, RGBA]]
 ) -> dict[int, Tuple[RGBA, RGBA]]:
@@ -219,9 +190,12 @@ def main(output_dir: pathlib.Path):
 
     colors = get_colors_from_lyr(LAYER_FILE)
 
-    sai_fill_style, _ = generate_mapbox_style(colors, "H")
-    chu_fill_style, _ = generate_mapbox_style(pick_color_for_chu(colors), "C")
-    dai_fill_style, _ = generate_mapbox_style(pick_color_for_dai(colors), "D")
+    def pick_fill_colors(colors):
+        return {code: fill.mapbox_style() for code, (fill, _) in colors.items()}
+
+    sai_fill_style = pick_fill_colors(colors)
+    chu_fill_style = pick_fill_colors(pick_color_for_chu(colors))
+    dai_fill_style = pick_fill_colors(pick_color_for_dai(colors))
 
     def dump(path, style):
         json.dump(style, open(path, "w"), separators=(",", ":"))

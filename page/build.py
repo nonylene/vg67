@@ -15,13 +15,13 @@ def build_variables(data_dir: pathlib.Path) -> dict[str, str]:
     mapbox_chu_styles = json.load(open(data_dir / "style/vg67_chu_style.json"))
 
     variables = {
-        '"__TEMPLATE_FILL_COLOR_SAI_MATCHER__"': json.dumps(
+        '"__TEMPLATE_CODE_COLORS_SAI_MATCHER__"': json.dumps(
             mapbox_sai_styles, separators=(",", ":")
         ),
-        '"__TEMPLATE_FILL_COLOR_CHU_MATCHER__"': json.dumps(
+        '"__TEMPLATE_CODE_COLORS_CHU_MATCHER__"': json.dumps(
             mapbox_chu_styles, separators=(",", ":")
         ),
-        '"__TEMPLATE_FILL_COLOR_DAI_MATCHER__"': json.dumps(
+        '"__TEMPLATE_CODE_COLORS_DAI_MATCHER__"': json.dumps(
             mapbox_dai_styles, separators=(",", ":")
         ),
         '"__TEMPLATE_LEGEND_SAI__"': json.dumps(
@@ -57,7 +57,17 @@ def template(path: pathlib.Path, variables: dict[str, str]) -> str:
     return content
 
 
-TEMPLATES = ["index.html", "index.js", "index.css"]
+TEMPLATES = [
+    "index.html",
+    "index.js",
+    "control.js",
+    "consts.js",
+    "url.js",
+    "variables.js",
+    "localStorage.js",
+    "mapFunction.js",
+    "index.css",
+]
 
 data_dir = pathlib.Path(__file__).parent.parent / "data"
 out_dir = data_dir / "page"

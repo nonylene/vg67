@@ -1,4 +1,11 @@
+MAPBOX_ACCESS_TOKEN = "pk.XX.XXXX"
+
 MAPTILE_CHU_URL = '"http://localhost:8000/mvt/chu/out/{z}/{x}/{y}.pbf"'
 MAPTILE_DAI_URL = '"http://localhost:8000/mvt/dai/out/{z}/{x}/{y}.pbf"'
 MAPTILE_SAI_URL = '"http://localhost:8000/mvt/sai/out/{z}/{x}/{y}.pbf"'
-MAPBOX_ACCESS_TOKEN = "pk.XX.XXXX"
+
+HANREI_BASE_URL = '"http://localhost:8000/hanrei/"'
+
+MAPBOX_STYLE_URL_STANDARD = '"mapbox://styles/foo/bar"'
+MAPBOX_STYLE_URL_LIGHT = '"mapbox://styles/foo/bar"'
+MAPBOX_STYLE_URL_NIGHT  = '"mapbox://styles/foo/bar"'

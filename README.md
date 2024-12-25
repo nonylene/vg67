@@ -6,10 +6,6 @@
 - `C`: Represents `{DAI_C}{CHU_C}`
 - `S`: Represents `{SHOKU_C}` with original additional codes
 
-## Craete mapbox styles
-
-See [colormap](./colormap/README.md).
-
 ## Create mapbox tilemaps
 
 ### 1. Get vg67 shapefiles from Biodivercity Center of Japan
@@ -50,9 +46,9 @@ $ awk '{print $0}' ./data/geojson-trimmed/dai/*.geojson > data/geojson-lines/vg6
 Install [felt/tippecanoe](https://github.com/felt/tippecanoe) and run:
 
 ```
-$ tippecanoe -Z10 -z12 -d14 -l vg67_detail --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_detail" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/detail/out/ --force --read-parallel data/geojson-lines/vg67_detail.geojsonlines
-$ tippecanoe -Z8 -z9 -l vg67_chu --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_chu" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/chu/out/ --force --read-parallel data/geojson-lines/vg67_chu.geojsonlines
-$ tippecanoe -Z6 -z9 -l vg67_dai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_dai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) https://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/dai/out/ --force --read-parallel data/geojson-lines/vg67_dai.geojsonlines
+$ tippecanoe -Z10 -z12 -d14 -l vg67_sai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_sai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/sai/out/ --force --read-parallel data/geojson-lines/vg67_sai.geojsonlines
+$ tippecanoe -Z8 -z9 -l vg67_chu --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_chu" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/chu/out/ --force --read-parallel data/geojson-lines/vg67_chu.geojsonlines
+$ tippecanoe -Z6 -z8 -l vg67_dai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_dai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/dai/out/ --force --read-parallel data/geojson-lines/vg67_dai.geojsonlines
 ```
 
 - `-d14`: Keep high resolution on the max zoom
@@ -68,9 +64,23 @@ For example...
 ```
 $ cp rclone.conf.example rclone.conf
 $ edit rclone.conf
-$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/out:/data/mvt:ro rclone/rclone copy /data/mvt/ r2://{r2 bucket}/vg67/vg67_detail/ --no-check-dest --s3-no-check-bucket --progress
-$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/trimmed/out:/data/mvt:ro rclone/rclone copy /data/mvt/ r2://{r2 bucket}/vg67/vg67_trimmed/ --no-check-dest --s3-no-check-bucket --progress
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/dai/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/dai/ --no-check-dest --s3-no-check-bucket --progress
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/chu/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/chu/ --no-check-dest --s3-no-check-bucket --progress
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/sai/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/sai/ --no-check-dest --s3-no-check-bucket --progress
+
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/hanrei/descriptions:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/hanrei/descriptions/ --no-check-dest --s3-no-check-bucket --progress
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/hanrei/images:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/hanrei/images/ --no-check-dest --s3-no-check-bucket --progress
+
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/page:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/ --no-check-dest --s3-no-check-bucket --progress
 ```
+
+## Fetch hanrei details from biodic site
+
+See [hanrei_crawler](./hanrei_crawler/).
+
+## Craete mapbox styles
+
+See [colormap](./colormap/README.md).
 
 ## Build the viewer page
 
@@ -85,4 +95,4 @@ $ python3 -m http.server
 ```
 
 - Open <http://localhost:8000/page/> on your browser to view the map
-- Set `http://localhost:8000/mvt/out/{z}/{x}/{y}.pbf` with max zoom level 12 to view the vector tiles on QGIS
+- Set `http://localhost:8000/mvt/sai/out/{z}/{x}/{y}.pbf` with max zoom level 12 to view the vector tiles on QGIS

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
   <meta charset="utf-8">
   <title>シームレス植生図 V1</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.1/mapbox-gl.css" rel="stylesheet">
   <link href="./index.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.1/mapbox-gl.js"></script>
 </head>
 
 <body>
@@ -15,6 +15,8 @@
   <div id="titleWrapper" class="wrapper">
     <div id="titleTile" class="tile">
       <span id="title">シームレス植生図 V1</span>
+      <div id="manual"><a href="https://gist.github.com/nonylene/004a485f2426c3e69744c2318a427f2c"
+          target="_blank">マニュアル</a></div>
     </div>
   </div>
   <div id="legendWrapper" class="wrapper">
@@ -22,23 +24,31 @@
       <div id="legend"></div>
       <template id="legendTemplate">
         <div id="legend">
-          <div class="legendParents">a > b ></div>
+          <div class="legendTopBox">
+            <div class="legendParents">a > b ></div>
+            <div class="legendCloseButtonWrapper">
+              <button class="legendCloseButton">×</button>
+            </div>
+          </div>
           <div class="legendCode">
             <input type="color" title="Click to change the fill color" class="legendColorBox" />
             <span class="legendCodeNumber">001113</span>
           </div>
-          <div class="legendName">市街地</div>
+          <details class="legendWrapDetails">
+            <summary>市街地</summary>
+            <div id="legendExpList"></div>
+          </details>
         </div>
       </template>
-      <div id="legendExpList"></div>
       <template id="legendExpListTemplate">
         <div id="legendExpList">
           <div class="currentLegendExp"></div>
           <details class="legendExpDetails">
-            <summary>Parent legends</summary>
+            <summary>上位区分</summary>
           </details>
           <div class="legendExpCite">
-            出典: <a href="http://gis.biodic.go.jp/webgis/sc-016.html">「統一凡例（植生区分・大区分一覧表）」</a><br />(環境省生物多様性センター)
+            出典: <a href="http://gis.biodic.go.jp/webgis/sc-016.html"
+              target="_blank">「統一凡例（植生区分・大区分一覧表）」</a>&nbsp;(環境省生物多様性センター)
           </div>
         </div>
       </template>
@@ -52,7 +62,51 @@
       </template>
     </div>
   </div>
-  <script src="./index.js"></script>
+
+  <script type="module" src="./index.js"></script>
+
+  <template id="settingsButtonControlTemplate">
+    <div class="mapboxgl-ctrl mapboxgl-ctrl-group">
+      <button id="settingsButton">🔧</button>
+    </div>
+  </template>
+
+  <template id="settingsControlTemplate">
+    <div class="mapboxgl-ctrl mapboxgl-ctrl-group" id="settingsControl">
+      <div class="settingsControlLabel">地図スタイル</div>
+      <div>
+        <select id="settingsControlMapSelect">
+          <option value="standard">標準（3D対応）</option>
+          <option value="light">ライト</option>
+          <option value="night">ダーク</option>
+          <option value="satellite">衛星画像</option>
+        </select>
+      </div>
+      <div class="settingsControlLabel">表示する植生（<a href="http://gis.biodic.go.jp/webgis/sc-011.html"
+          target="_blank">解説</a>）</div>
+      <div>
+        <select id="settingsControlShokuseiSelect">
+          <option value="all">すべて</option>
+          <option value="natural">自然植生</option>
+          <option value="secondary">代償植生</option>
+          <option value="disabled" hidden>（詳細フィルタ）</option>
+        </select>
+      </div>
+      <div class="settingsControlLabel">詳細フィルタ（<a href="http://gis.biodic.go.jp/webgis/sc-016.html"
+          target="_blank">凡例</a>）</div>
+      <div class="settingsControlLabelWrapper">
+        <input id="settingsControlFilterInput" placeholder="例: 570300, 14"></input>
+        <button id="settingsControlFilterResetButton">×</button>
+      </div>
+      <div id="settingsControlFilterWrapper"></div>
+    </div>
+  </template>
+
+  <template id="settingsControlFilterWrapperTemplate">
+    <div id="settingsControlFilterWrapper">
+    </div>
+  </template>
+
 </body>
 
 </html>

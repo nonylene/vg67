@@ -4,12 +4,12 @@ import json
 import pathlib
 import traceback
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum, auto
 from math import pi, sqrt
 
 import shapely
 import shapely.ops
-from attr import dataclass
 
 
 class Kubun(Enum):
@@ -51,16 +51,16 @@ DAI_CONFIG = KubunConfig(
 CHU_CONFIG = KubunConfig(
     kubun=Kubun.CHU,
     key="C",
-    # 200m ^2
-    force_merge_area_limit=0.00001 * 200 * 0.00001 * 200,
-    # 40m
-    force_merge_simplify_limit=0.00001 * 40,
+    # 250m ^2
+    force_merge_area_limit=0.00001 * 250 * 0.00001 * 250,
+    # 50m
+    force_merge_simplify_limit=0.00001 * 50,
     # 500m * 1000m
     force_merge_thinness_area_step_1=0.00001 * 1000 * 0.00001 * 500,
-    # 1km * 1000m
-    force_merge_thinness_area_step_2=0.00001 * 1000 * 0.00001 * 1000,
-    # 3km * 1000m
-    force_merge_thinness_area_step_3=0.00001 * 1000 * 0.00001 * 3 * 1000,
+    # 1.5km * 1000m
+    force_merge_thinness_area_step_2=0.00001 * 1000 * 0.00001 * 1500,
+    # 4km * 1000m
+    force_merge_thinness_area_step_3=0.00001 * 1000 * 0.00001 * 4 * 1000,
     # 15% common border required
     code_merge_minimum_ratio=0.15,
 )

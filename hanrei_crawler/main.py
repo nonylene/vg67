@@ -143,7 +143,7 @@ roman_to_number = {
 
 
 def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
-    names_dir = out_dir / "names"
+    names_dir = out_dir / "names_raw"
     names_dir.mkdir(parents=True, exist_ok=True)
 
     dai = {}
@@ -169,29 +169,29 @@ def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
 
     json.dump(
         shokusei,
-        open(names_dir / "shokusei_raw.json", "w"),
+        open(names_dir / "shokusei.json", "w"),
         ensure_ascii=False,
     )
     json.dump(
         dai,
-        open(names_dir / "dai_raw.json", "w"),
+        open(names_dir / "dai.json", "w"),
         ensure_ascii=False,
     )
     json.dump(
         chu,
-        open(names_dir / "chu_raw.json", "w"),
+        open(names_dir / "chu.json", "w"),
         ensure_ascii=False,
     )
     json.dump(
         sai,
-        open(names_dir / "sai_raw.json", "w"),
+        open(names_dir / "sai.json", "w"),
         ensure_ascii=False,
     )
 
 
-def crawl_dump_legend_explanations(out_dir: pathlib.Path, legends: list[Legend1st]):
-    explanations_dir = out_dir / "explanation"
-    explanations_dir.mkdir(parents=True, exist_ok=True)
+def crawl_dump_legend_descriptions(out_dir: pathlib.Path, legends: list[Legend1st]):
+    descriptions_dir = out_dir / "descriptions_raw"
+    descriptions_dir.mkdir(parents=True, exist_ok=True)
 
     images_dir = out_dir / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
@@ -227,7 +227,7 @@ def crawl_dump_legend_explanations(out_dir: pathlib.Path, legends: list[Legend1s
 
         json.dump(
             value,
-            open(explanations_dir / f"{code}.json", "w"),
+            open(descriptions_dir / f"{code}.json", "w"),
             separators=(",", ":"),
             ensure_ascii=False,
         )
@@ -245,7 +245,7 @@ def main(data_dir: pathlib.Path):
         time.sleep(SLEEP_SEC)
 
     dump_legend_metadata(out_dir, legends)
-    crawl_dump_legend_explanations(out_dir, legends)
+    crawl_dump_legend_descriptions(out_dir, legends)
 
 
 if __name__ == "__main__":

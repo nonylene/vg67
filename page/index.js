@@ -1,14 +1,30 @@
-mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
+import {
+  MAP_URL, LAYER_NAME, SAI, CHU, DAI,
+  FILL_COLOR_MATCHER_CHU, FILL_COLOR_MATCHER_SAI, FILL_COLOR_MATCHER_DAI,
+  DAI_SPECIAL_TRANSFORM,
+  PROPERTY_KEY,
+  KUBUNS,
+  MIN_ZOOM_LEVEL_CHU,
+  MIN_ZOOM_LEVEL_SAI,
+} from './consts.js';
+import { SettingsButtonControl, SettingsControl } from './control.js';
+import { getMapStyleSetting } from './localStorage.js';
+import { formatCode, getAdvancedLayerFilters, getCodeColor, getFillOpacity, getKubunForZoom, getLegends, getShokuseiLayerFilters, scaleCode, updateCodeColor, updateFillMatcher } from './mapFunction.js';
+import { getLngLatFromURL, getZoomFromURL, updateURL } from './url.js';
+import { currentChuFillOpacity, currentChuFilter, currentDaiFillOpacity, currentDaiFilter, currentSaiFillOpacity, currentSaiFilter, setCurrentRawCode, setCurrentFillOpacity, setCurrentHanreiKubun, currentCodeKubun, currentHanreiKubun, currentRawCode, CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, setCurrentDaiFilter, setCurrentChuFilter, setCurrentSaiFilter } from './variables.js';
+
 
 // Build map as fast as possible
+mapboxgl.accessToken = "__TEMPLATE_MAPBOX_ACCESS_TOKEN__";
+
 const map = new mapboxgl.Map({
   container: 'map',
-  center: [139.7669975, 35.6812505], // Tokyo
-  style: "mapbox://styles/windfiber/cm3hcr9yl007301sq96vwf55b",
-  zoom: 11,
+  center: getLngLatFromURL(),
+  style: MAP_URL[getMapStyleSetting()],
+  zoom: getZoomFromURL(),
   minZoom: 6,
   language: 'ja',
-  customAttribution: [`Source: <a href="https://www.biodic.go.jp/kiso/vg/vg_kiso.html">1/2.5万植生図GISデータ(環境省生物多様性センター)</a> を加工して作成`],
+  customAttribution: [`Source: <a href="http://www.biodic.go.jp/kiso/vg/vg_kiso.html">1/2.5万植生図GISデータ(環境省生物多様性センター)</a> を加工して作成`],
 });
 
 map.addControl(
@@ -21,172 +37,58 @@ map.addControl(
   "bottom-right",
 );
 
-const mobile = navigator.userAgentData.mobile;
+const settingsControl = new SettingsControl();
 
-const legendDai = "__TEMPLATE_LEGEND_DAI__";
-const legendChu = "__TEMPLATE_LEGEND_CHU__";
-const legendSai = "__TEMPLATE_LEGEND_SAI__";
-const legendShokusei = "__TEMPLATE_LEGEND_SHOKUSEI__";
+map.addControl(
+  new SettingsButtonControl(settingsControl),
+  "bottom-right",
+);
 
-const fillColorMatcherSai = "__TEMPLATE_FILL_COLOR_SAI_MATCHER__";
-const fillColorMatcherChu = "__TEMPLATE_FILL_COLOR_CHU_MATCHER__";
-const fillColorMatcherDai = "__TEMPLATE_FILL_COLOR_DAI_MATCHER__";
+map.addControl(
+  settingsControl,
+  "bottom-right",
+);
 
-const daiSpecialTransform = {
-  91: 58, // Water area
-  99: 57, // Paddy field
-}
+/* constants */
+// Some user agents (Fx, Safari) do not have userAgentData still;
+// (Evil?) Almost all non Chromium based browsers should be mobile
+const mobile = navigator.userAgentData?.mobile ?? true;
 
 const paintPropertyOptions = {
   validate: false,
 }
 
-// Kubun enums
-const SAI = 11;
-const CHU = 13;
-const DAI = 1113;
+const LAYER_NAMES = Object.values(LAYER_NAME);
 
-const DEFAULT_FILL_OPACITY = {
-  [SAI]: 0.55,
-  [CHU]: 0.5,
-  [DAI]: 0.5,
-}
+const HANREI_BASE_URL = "__TEMPLATE_HANREI_BASE_URL__";
 
-const SELECTED_FILL_OPACITY = {
-  [SAI]: 0.95,
-  [CHU]: 0.9,
-  [DAI]: 0.9,
-}
+const DOUBLE_TAP_MS = 250;
 
-const LAYER_NAME = {
-  [SAI]: 'vg67-sai',
-  [CHU]: 'vg67-chu',
-  [DAI]: 'vg67-dai',
-}
+/* global variables */
+let tapTimer = null;
+let doubleTapping = false
 
-const PROPERTY_KEY = {
-  [SAI]: 'H',
-  [CHU]: 'C',
-  [DAI]: 'D',
-}
+let popup = null;
 
-const updateFillOpacity = (code, kubun) => {
-  // code should be raw; before transformed
-  if (code == null) {
-    map.setPaintProperty(LAYER_NAME[kubun], 'fill-opacity', DEFAULT_FILL_OPACITY[kubun], paintPropertyOptions);
-  } else {
-    map.setPaintProperty(LAYER_NAME[kubun],
-      'fill-opacity',
-      ["case", ["==", ["get", PROPERTY_KEY[kubun]], code], SELECTED_FILL_OPACITY[kubun], 0.3],
-      paintPropertyOptions
-    )
-  }
-}
+/* Close details by default on mobile devices */
+let legendOpen = !mobile;
+let legendParentOpen = false;
 
-const resetFillOpacity = () => {
-  Object.keys(LAYER_NAME).forEach(kubun => {
-    map.setPaintProperty(LAYER_NAME[kubun], 'fill-opacity', DEFAULT_FILL_OPACITY[kubun], paintPropertyOptions);
+const updateFillOpacity = (rawCode, kubun) => {
+  KUBUNS.forEach(targetKubun => {
+    const fillOpacity = getFillOpacity(rawCode, kubun, targetKubun);
+    setCurrentFillOpacity(fillOpacity, targetKubun);
+    map.setPaintProperty(LAYER_NAME[targetKubun], 'fill-opacity', fillOpacity, paintPropertyOptions);
   })
 }
 
-const getLegendsSai = (saiCode) => {
-  const parents = getLegendsChu(Math.floor(saiCode / 100))
-
-  if (saiCode % 100 === 0) {
-    return parents
-  } else {
-    const name = legendSai[String(saiCode)];
-    const saiLegend = {
-      "name": name,
-      "code": saiCode,
-      "linkCode": saiCode,
-    }
-    return [saiLegend, ...parents]
-  }
+const resetFillOpacity = () => {
+  KUBUNS.forEach(kubun => {
+    const fillOpacity = getFillOpacity(null, kubun, kubun);
+    setCurrentFillOpacity(fillOpacity, kubun);
+    map.setPaintProperty(LAYER_NAME[kubun], 'fill-opacity', fillOpacity, paintPropertyOptions);
+  })
 }
-
-const getLegendsChu = (chuCode) => {
-  const parents = getLegendsDai(Math.floor(chuCode / 100))
-
-  if (chuCode % 100 === 0) {
-    return parents
-  } else {
-    const name = legendChu[String(chuCode)];
-    const chuLegend = {
-      "name": name,
-      "code": chuCode,
-      "linkCode": chuCode * 100,
-    }
-    return [chuLegend, ...parents]
-  }
-
-}
-
-const getLegendsDai = (daiRawCode) => {
-  const daiCode = daiRawCode in daiSpecialTransform ? daiSpecialTransform[daiRawCode] : daiRawCode;
-  const dai = legendDai[String(daiRawCode)];
-  const shokuseiName = legendShokusei[String(dai["cc"])];
-  const daiName = dai["n"];
-  return [
-    {
-      "name": daiName,
-      "code": daiCode,
-      "linkCode": daiCode * 10000,
-    },
-    {
-      "name": shokuseiName,
-    },
-  ]
-}
-
-const getLegends = (rawCode, kubun) => {
-  switch (kubun) {
-    case SAI:
-      return getLegendsSai(rawCode)
-    case CHU:
-      return getLegendsChu(rawCode)
-    case DAI:
-      return getLegendsDai(rawCode)
-  }
-
-  return null // unexpected
-}
-
-const formatCode = (code) => {
-  if (code < 99) {
-    // dai
-    return String(code).padStart(2, '0') + '****';
-  }
-  if (code < 9999) {
-    // chu (9999 -> no information)
-    return String(code).padStart(4, '0') + '**';
-  }
-  // sai
-  return String(code).padStart(6, '0');
-}
-
-const updateMatcherValue = (matcher, rawCode, value) => {
-  // delete current match
-  for (let i = 0; i < matcher.length; i++) {
-    const v = matcher[i];
-    if (Array.isArray(v)) {
-      if (v.includes(rawCode)) {
-        if (v.length === 1) {
-          matcher.splice(i, 2);
-        } else {
-          matcher[i] = v.filter((k) => k !== rawCode);
-        }
-        break
-      }
-    }
-  }
-
-  matcher.splice(2, 0, [rawCode], value);
-}
-
-const DOUBLE_TAP_MS = 250;
-let tapTimer = null;
-let doubleTapping = false
 
 // click event will not fire on double click / tap
 const handleSingleClick = (func) => {
@@ -210,6 +112,10 @@ const handleSingleClick = (func) => {
 
 // touch events only fires on mobile
 const handleTouchStart = () => {
+  if (map.hasControl(settingsControl)) {
+    map.removeControl(settingsControl);
+  }
+
   if (tapTimer != null) {
     doubleTapping = true;
     // Disable setting doubleTapping = false after the first tap
@@ -223,31 +129,79 @@ const handleTouchStart = () => {
   }, DOUBLE_TAP_MS - 5);
 }
 
-
-const onPickColorChange = (value, rawCode, kubun) => {
-  switch (kubun) {
-    case SAI:
-      updateMatcherValue(fillColorMatcherSai, rawCode, value);
-      map.setPaintProperty(LAYER_NAME[kubun], 'fill-color', fillColorMatcherSai, paintPropertyOptions);
-      break
-    case CHU:
-      updateMatcherValue(fillColorMatcherChu, rawCode, value);
-      map.setPaintProperty(LAYER_NAME[kubun], 'fill-color', fillColorMatcherChu, paintPropertyOptions);
-      break
-    case DAI:
-      updateMatcherValue(fillColorMatcherDai, rawCode, value);
-      map.setPaintProperty(LAYER_NAME[kubun], 'fill-color', fillColorMatcherDai, paintPropertyOptions);
-      break
+const handleMouseDown = () => {
+  if (map.hasControl(settingsControl)) {
+    map.removeControl(settingsControl);
   }
 }
 
-const fetchExplanation = async (fullCode) => {
-  const resp = await fetch(`http://localhost:8000/hanrei/explanation/${fullCode}.json`);
+const handleZoomEnd = () => {
+  updateURL(map)
+
+  if (currentHanreiKubun == null) {
+    return
+  }
+
+  const mapKubun = getKubunForZoom(map.getZoom());
+  let desiredHanreiKubun;
+  switch (currentCodeKubun) {
+    case SAI:
+      desiredHanreiKubun = mapKubun;
+      break
+    case CHU:
+      desiredHanreiKubun = mapKubun === DAI ? DAI : CHU
+      break
+    case DAI:
+      desiredHanreiKubun = DAI;
+      break
+  }
+
+  if (desiredHanreiKubun !== currentHanreiKubun) {
+    const newRawCode = scaleCode(currentRawCode, currentCodeKubun, desiredHanreiKubun);
+    const legends = getLegends(newRawCode, desiredHanreiKubun);
+    showHanrei(newRawCode, legends, desiredHanreiKubun);
+  }
+}
+
+const handleMoveEnd = () => {
+  updateURL(map)
+}
+
+const setMapFilters = ([dai, chu, sai]) => {
+  setCurrentDaiFilter(dai);
+  setCurrentChuFilter(chu);
+  setCurrentSaiFilter(sai);
+  map.setFilter(LAYER_NAME[DAI], dai)
+  map.setFilter(LAYER_NAME[CHU], chu)
+  map.setFilter(LAYER_NAME[SAI], sai)
+}
+
+const handleCurrentAdvancedFilterChanged = (e) => {
+  const filter = e.detail.value;
+  setMapFilters(getAdvancedLayerFilters(filter));
+}
+
+const handleCurrentShokuseiFilterChanged = (e) => {
+  const filter = e.detail.value;
+  if (filter === 'disabled') {
+    return
+  }
+  setMapFilters(getShokuseiLayerFilters(filter));
+}
+
+const onPickColorChange = (value, rawCode, kubun) => {
+  updateCodeColor(rawCode, kubun, value);
+  const fillMatcher = updateFillMatcher(rawCode, kubun, value);
+  map.setPaintProperty(LAYER_NAME[kubun], 'fill-color', fillMatcher, paintPropertyOptions);
+}
+
+const fetchDescription = async (fullCode) => {
+  const resp = await fetch(new URL(`descriptions/${fullCode}.json`, HANREI_BASE_URL));
   return resp.json();
 }
 
 const toImageURL = (filename) => {
-  return filename != null ? `http://localhost:8000/hanrei/images/${filename}` : null
+  return filename != null ? new URL(`images/${filename}`, HANREI_BASE_URL) : null
 }
 
 const hideHanrei = () => {
@@ -255,7 +209,8 @@ const hideHanrei = () => {
   document.querySelector("div#titleWrapper").style.display = "block";
 }
 
-const showHanreiTile = (code, rawCode, legends, rgb, kubun) => {
+const showHanrei = (rawCode, legends, kubun) => {
+  const code = DAI_SPECIAL_TRANSFORM[rawCode] ?? rawCode
   const legend = legends[0];
   const parentsText = legends.slice(1).reverse().map(t => t.name).join(" > ") + " >";
 
@@ -263,29 +218,45 @@ const showHanreiTile = (code, rawCode, legends, rgb, kubun) => {
   const clone = template.content.cloneNode(true);
   clone.querySelector(".legendParents").textContent = parentsText;
   clone.querySelector(".legendCodeNumber").textContent = formatCode(code);
-  clone.querySelector(".legendName").textContent = legend.name;
-  clone.querySelector(".legendColorBox").value = rgb;
+  clone.querySelector(".legendCloseButton").onclick = deselect;
+  clone.querySelector(".legendWrapDetails").open = legendOpen;
+  clone.querySelector(".legendWrapDetails").addEventListener('toggle', (event) => {
+    legendOpen = event.newState === 'open'
+  });
+  clone.querySelector(".legendWrapDetails>summary").textContent = legend.name;
+  clone.querySelector(".legendColorBox").value = getCodeColor(rawCode, kubun);
   clone.querySelector("input.legendColorBox").addEventListener('change', (event) => onPickColorChange(event.target.value, rawCode, kubun));
+  // UX: Show old content temporary for legendExpList to prevent flickering due to API call latency
+  const oldLegendExpList = document.querySelector("#legendExpList")
+  if (oldLegendExpList != null) {
+    clone.querySelector("#legendExpList").replaceWith(oldLegendExpList.cloneNode(true));
+    clone.querySelector("#legendExpList").style.filter = "opacity(0.25)"
+  }
 
   document.querySelector("div#titleWrapper").style.display = "none";
   document.querySelector("div#legend").replaceWith(clone)
   document.querySelector("div#legendWrapper").style.display = "flex";
 
+  setCurrentHanreiKubun(kubun);
+
   // remove the last element for descriptions
   const promises = legends.slice(0, -1).map(async ({ code, linkCode, name }) => {
-    const { image, text } = await fetchExplanation(linkCode);
+    const { image, text } = await fetchDescription(linkCode);
     return { codeRepr: formatCode(code), imageURL: toImageURL(image), text, name }
   })
 
   const legendListTemplate = document.querySelector("#legendExpListTemplate")
   const listClone = legendListTemplate.content.cloneNode(true);
-  if (promises.length <= 1) {
-    listClone.querySelector(".legendExpDetails").style.display = "none";
-  }
+  const expDetails = listClone.querySelector(".legendExpDetails");
+  expDetails.open = legendParentOpen;
+  expDetails.addEventListener("toggle", (event) => {
+    legendParentOpen = event.newState === 'open'
+  })
 
   const legendExpTemplate = document.querySelector("#legendExpTemplate")
-  Promise.all(promises).then(c => {
-    c.map(({ codeRepr, imageURL, text, name }, idx) => {
+  let exps = []
+  Promise.all(promises).then(rs => exps = rs).catch(console.error).finally(() => {
+    exps.map(({ codeRepr, imageURL, text, name }, idx) => {
       const clone = legendExpTemplate.content.cloneNode(true);
       if (idx == 0) {
         // First element does not need to show title
@@ -303,17 +274,27 @@ const showHanreiTile = (code, rawCode, legends, rgb, kubun) => {
       if (idx == 0) {
         listClone.querySelector(".currentLegendExp").appendChild(element);
       } else {
-        listClone.querySelector(".legendExpDetails").appendChild(element);
+        expDetails.appendChild(element);
       }
     })
+
+    if (exps.length <= 1) {
+      expDetails.style.display = "none";
+    }
+
     document.querySelector("div#legendExpList").replaceWith(listClone);
-  }).catch(console.error)
+  })
 }
 
-const eventFillColorToRGB = (e) => {
-  const rgba = e.features[0].layer.paint["fill-color"];
-  const rgbToHex = (v) => Math.floor(v * 255).toString(16).padStart(2, "0");
-  return `#${rgbToHex(rgba.r)}${rgbToHex(rgba.g)}${rgbToHex(rgba.b)}`
+const deselect = () => {
+  resetFillOpacity();
+  setCurrentRawCode(null, null);
+  setCurrentHanreiKubun(null);
+  if (popup != null) {
+    popup.remove();
+    popup = null;
+  }
+  hideHanrei();
 }
 
 const showPopup = (lngLat, name) => {
@@ -323,7 +304,7 @@ const showPopup = (lngLat, name) => {
 
   const html = `<div class="legendPopup">${name}</div>`
 
-  const popup = new mapboxgl.Popup()
+  popup = new mapboxgl.Popup()
     .setLngLat(lngLat)
     .setHTML(html)
     .addTo(map);
@@ -331,38 +312,65 @@ const showPopup = (lngLat, name) => {
   // Set onclick maunally because on('close') event fires even if the popup is closed programatically
   // When we click the outside of popup, it will be closed programatically, and opacity reset process will result to waste of energy
   // since map's onclick event will be fired right after this event
-  popup.getElement().querySelector("button.mapboxgl-popup-close-button").onclick = (e) => {
-    resetFillOpacity();
-    popup.remove();
-    hideHanrei();
-  }
+  popup.getElement().querySelector("button.mapboxgl-popup-close-button").onclick = deselect;
 }
 
 const onMapClick = (e, kubun) => {
   const rawCode = e.features[0].properties[PROPERTY_KEY[kubun]];
   const lngLat = e.lngLat;
-  const rgb = eventFillColorToRGB(e);
   const legends = getLegends(rawCode, kubun);
-  let code = rawCode;
-  if (rawCode in daiSpecialTransform) {
-    code = daiSpecialTransform[rawCode];
-  }
 
   handleSingleClick(() => {
-    updateFillOpacity(rawCode, kubun);
+    if (currentRawCode !== rawCode) {
+      updateFillOpacity(rawCode, kubun);
+      showHanrei(rawCode, legends, kubun)
+      setCurrentRawCode(rawCode, kubun);
+    }
     showPopup(lngLat, legends[0].name);
-    showHanreiTile(code, rawCode, legends, rgb, kubun)
   })
 }
 
 map.on('load', () => {
+  map.on('click', LAYER_NAME[SAI], (e) => {
+    onMapClick(e, SAI);
+  });
+
+  map.on('click', LAYER_NAME[CHU], (e) => {
+    onMapClick(e, CHU);
+  });
+
+  map.on('click', LAYER_NAME[DAI], (e) => {
+    onMapClick(e, DAI);
+  });
+
+  map.on('click', (e) => {
+    const features = map.queryRenderedFeatures(e.point);
+    // Light theme includes the layer "water"
+    if (features.filter(v => v.layer != null && LAYER_NAMES.includes(v.layer.id)).length === 0) {
+      handleSingleClick(deselect);
+    }
+  });
+
+  map.on('touchstart', handleTouchStart);
+  map.on('mousedown', handleMouseDown);
+  map.on('zoomend', handleZoomEnd);
+  map.on('moveend', handleMoveEnd);
+
+  window.addEventListener(CURRENT_ADVANCED_FILTER_CHANGE_EVENT, handleCurrentAdvancedFilterChanged)
+  window.addEventListener(CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, handleCurrentShokuseiFilterChanged)
+})
+
+map.on('style.load', () => {
+  // Make features shine when no light environment (night)
+  const fillEmissiveStrength = getMapStyleSetting() === 'night' ? 1 : 0;
+
   map.addSource('vg67-dai', {
     type: 'vector',
     tiles: [
       "__TEMPLATE_MAPTILE_DAI_URL__",
     ],
     minzoom: 6,
-    maxzoom: 8,
+    maxzoom: MIN_ZOOM_LEVEL_CHU,
     bounds: [
       122, 24, 154, 46,
     ],
@@ -372,8 +380,8 @@ map.on('load', () => {
     tiles: [
       "__TEMPLATE_MAPTILE_CHU_URL__",
     ],
-    minzoom: 8,
-    maxzoom: 9,
+    minzoom: MIN_ZOOM_LEVEL_CHU,
+    maxzoom: MIN_ZOOM_LEVEL_SAI,
     bounds: [
       122, 24, 154, 46,
     ],
@@ -383,78 +391,71 @@ map.on('load', () => {
     tiles: [
       "__TEMPLATE_MAPTILE_SAI_URL__",
     ],
-    minzoom: 9,
+    minzoom: MIN_ZOOM_LEVEL_SAI,
     maxzoom: 12,
     bounds: [
       122, 24, 154, 46,
     ],
   });
 
-  map.addLayer({
-    'id': LAYER_NAME[DAI],
-    'type': 'fill',
-    'source': 'vg67-dai',
-    'source-layer': 'vg67_dai',
-    'minzoom': 6,
-    'maxzoom': 8,
-    "paint": {
-      "fill-color": fillColorMatcherDai,
-      "fill-opacity": DEFAULT_FILL_OPACITY[DAI],
-      "fill-outline-color": "rgba(0,0,0,0)",
-    },
-  });
-  map.addLayer({
-    'id': LAYER_NAME[CHU],
-    'type': 'fill',
-    'source': 'vg67-chu',
-    'source-layer': 'vg67_chu',
-    'minzoom': 8,
-    'maxzoom': 10,
-    "paint": {
-      "fill-color": fillColorMatcherChu,
-      "fill-opacity": DEFAULT_FILL_OPACITY[CHU],
-      "fill-outline-color": "rgba(0,0,0,0)",
-    },
-  });
-  map.addLayer({
-    'id': LAYER_NAME[SAI],
-    'type': 'fill',
-    'source': 'vg67-sai',
-    'source-layer': 'vg67_detail',
-    'minzoom': 10,
-    "paint": {
-      "fill-color": fillColorMatcherSai,
-      "fill-opacity": DEFAULT_FILL_OPACITY[SAI],
-      "fill-outline-color": [
-        "step", ["zoom"],
-        "rgba(0,0,0,0)",
-        12, fillColorMatcherSai,
-      ],
-    },
-  });
-
-
-  map.on('click', 'vg67-sai', (e) => {
-    onMapClick(e, SAI);
-  });
-
-  map.on('click', 'vg67-chu', (e) => {
-    onMapClick(e, CHU);
-  });
-
-  map.on('click', 'vg67-dai', (e) => {
-    onMapClick(e, DAI);
-  });
-
-  map.on('click', (e) => {
-    const features = map.queryRenderedFeatures(e.point);
-    if (features.length === 0) {
-      handleSingleClick(() => {
-        resetFillOpacity();
-        hideHanrei();
-      });
-    }
-  });
-
-  map.on('touchstart', handleTouchStart);
+  map.addLayer(
+    Object.assign(
+      {
+        'id': LAYER_NAME[DAI],
+        'type': 'fill',
+        'source': 'vg67-dai',
+        'source-layer': 'vg67_dai',
+        'minzoom': 6,
+        'maxzoom': 8,
+        "paint": {
+          "fill-color": FILL_COLOR_MATCHER_DAI,
+          "fill-opacity": currentDaiFillOpacity,
+          "fill-outline-color": "rgba(0,0,0,0)",
+          "fill-emissive-strength": fillEmissiveStrength,
+        },
+      },
+      currentDaiFilter != null ? { "filter": currentDaiFilter } : null
+    )
+  );
+  map.addLayer(
+    Object.assign(
+      {
+        'id': LAYER_NAME[CHU],
+        'type': 'fill',
+        'source': 'vg67-chu',
+        'source-layer': 'vg67_chu',
+        'minzoom': 8,
+        'maxzoom': 10,
+        "paint": {
+          "fill-color": FILL_COLOR_MATCHER_CHU,
+          "fill-opacity": currentChuFillOpacity,
+          "fill-outline-color": "rgba(0,0,0,0)",
+          "fill-emissive-strength": fillEmissiveStrength,
+        },
+      },
+      currentChuFilter != null ? { "filter": currentChuFilter } : null
+    )
+  );
+  map.addLayer(
+    Object.assign(
+      {
+        'id': LAYER_NAME[SAI],
+        'type': 'fill',
+        'source': 'vg67-sai',
+        'source-layer': 'vg67_sai',
+        'minzoom': 10,
+        "paint": {
+          "fill-color": FILL_COLOR_MATCHER_SAI,
+          "fill-opacity": currentSaiFillOpacity,
+          "fill-outline-color": [
+            "step", ["zoom"],
+            "rgba(0,0,0,0)",
+            12, FILL_COLOR_MATCHER_SAI,
+          ],
+          "fill-emissive-strength": fillEmissiveStrength,
+        },
+      },
+      currentSaiFilter != null ? { "filter": currentSaiFilter } : null
+    )
+  );
 });

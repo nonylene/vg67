@@ -27,12 +27,16 @@ SAI_ADDITIONAL = {
     9999: "情報なし",
 }
 
+DESCRIPTION_NOIMAGE = [580000]  # 市街地等
 
-def main(data_dir: pathlib.Path):
+
+def names(data_dir: pathlib.Path):
+    names_raw = data_dir / "hanrei/names_raw"
     names = data_dir / "hanrei/names"
+    names.mkdir(parents=True, exist_ok=True)
 
     # sai
-    sai_raw = json.load(open(names / "sai_raw.json"))
+    sai_raw = json.load(open(names_raw / "sai.json"))
     sai = {k: v["n"] for k, v in sai_raw.items()}
     for k, v in SAI_ADDITIONAL.items():
         sai[str(k)] = v
@@ -45,7 +49,7 @@ def main(data_dir: pathlib.Path):
     )
 
     # chu
-    chu_raw = json.load(open(names / "chu_raw.json"))
+    chu_raw = json.load(open(names_raw / "chu.json"))
     chu = {k: v["n"] for k, v in chu_raw.items()}
     for k, v in CHU_ADDITIONAL.items():
         chu[str(k)] = v
@@ -58,7 +62,7 @@ def main(data_dir: pathlib.Path):
     )
 
     # dai
-    dai_raw = json.load(open(names / "dai_raw.json"))
+    dai_raw = json.load(open(names_raw / "dai.json"))
     for k, v in DAI_ADDITIONAL.items():
         dai_raw[str(k)] = v
 
@@ -70,7 +74,7 @@ def main(data_dir: pathlib.Path):
     )
 
     # shokusei
-    shokusei_raw = json.load(open(names / "shokusei_raw.json"))
+    shokusei_raw = json.load(open(names_raw / "shokusei.json"))
     shokusei = {k: v["n"] for k, v in shokusei_raw.items()}
     for k, v in SHOKUSEI_ADDITIONAL.items():
         shokusei[str(k)] = v
@@ -81,6 +85,23 @@ def main(data_dir: pathlib.Path):
         separators=(",", ":"),
         ensure_ascii=False,
     )
+
+
+def descriptions(data_dir: pathlib.Path):
+    descriptions_raw = data_dir / "hanrei/descriptions_raw"
+    descriptions = data_dir / "hanrei/descriptions"
+    descriptions.mkdir(parents=True, exist_ok=True)
+
+    for description in descriptions_raw.iterdir():
+        data = json.load(open(description))
+        if int(description.stem) in DESCRIPTION_NOIMAGE:
+            data["image"] = None
+        json.dump(data, open(descriptions / description.name, "w"), ensure_ascii=False)
+
+
+def main(data_dir: pathlib.Path):
+    names(data_dir)
+    descriptions(data_dir)
 
 
 if __name__ == "__main__":
