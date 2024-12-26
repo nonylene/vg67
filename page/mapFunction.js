@@ -222,7 +222,7 @@ export const getLegends = (rawCode, kubun) => {
 
 // Get opacity
 const SELECTED_FILL_OPACITY = {
-  [SAI]: 0.9,
+  [SAI]: 0.85,
   [CHU]: 0.9,
   [DAI]: 0.9,
 }
