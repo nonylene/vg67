@@ -1,11 +1,10 @@
 # type: ignore
 
 import argparse
+import colorsys
 import json
 import pathlib
-from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum, auto
 from operator import itemgetter
 from typing import Tuple
 
@@ -62,6 +61,8 @@ ADDITIONAL_COLORS = {
     141701: RGBA(36, 87, 61, 1),  # キタゴヨウ‐アカエゾマツ群落
     20608: RGBA(66, 82, 163, 1),  # コメススキ－イワツメクサ群集
 }
+
+WATER_AREA = 580600
 
 DAI_COLOR_ALIASES = {
     0: 9999,  # transparent
@@ -148,6 +149,25 @@ def get_colors_from_lyr(layer_file_path: str) -> dict[int, Tuple[RGBA, RGBA]]:
     return colors
 
 
+def darken_fill(colors: dict[int, Tuple[RGBA, RGBA]]) -> dict[int, Tuple[RGBA, RGBA]]:
+    darken_colors = {}
+    for key, (fill, outline) in colors.items():
+        (h, l, s) = colorsys.rgb_to_hls(fill.r / 255, fill.g / 255, fill.b / 255)
+        # Adjust light
+        new_l = l
+        darken_base = 0.5
+        darken_up = 0.9
+        if WATER_AREA != key and l > darken_base:  # Water area should be as is
+            new_l = darken_base + (l - darken_base) * (darken_up - darken_base) / (
+                1 - darken_base
+            )
+        (r, g, b) = colorsys.hls_to_rgb(h, new_l, s)
+
+        darken_colors[key] = (RGBA(r * 255, g * 255, b * 255, fill.a), outline)
+
+    return darken_colors
+
+
 def pick_color_for_chu(
     sai_colors: dict[int, Tuple[RGBA, RGBA]]
 ) -> dict[int, Tuple[RGBA, RGBA]]:
@@ -188,7 +208,7 @@ def main(output_dir: pathlib.Path):
         if type(obj) is type and issubclass(obj, Object):
             REGISTRY.register(obj)
 
-    colors = get_colors_from_lyr(LAYER_FILE)
+    colors = darken_fill(get_colors_from_lyr(LAYER_FILE))
 
     def pick_fill_colors(colors):
         return {code: fill.mapbox_style() for code, (fill, _) in colors.items()}
