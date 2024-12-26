@@ -247,7 +247,7 @@ div#settingsControlFilterWrapper div {
 @media (max-width: 600px) {
   div.wrapper {
     width: 100% !important;
-    max-height: 33%;
+    max-height: 35%;
     padding: 8px;
   }
 
