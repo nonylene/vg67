@@ -167,6 +167,11 @@ def dump_legend_metadata(out_dir: pathlib.Path, legends: list[Legend1st]):
                             "n": legend3.name,
                         }
 
+    # We cannot get 260001 via GetTitles API
+    sai[260001] = {
+        "n": "風倒跡地植生",
+    }
+
     json.dump(
         shokusei,
         open(names_dir / "shokusei.json", "w"),
@@ -207,6 +212,9 @@ def crawl_dump_legend_descriptions(out_dir: pathlib.Path, legends: list[Legend1s
                         legend_explanation_args.append(
                             (legend1.code, legend2.code, legend3.code)
                         )
+
+    # We cannot get 260001 via GetTitles API
+    legend_explanation_args.append(("26", "00", "01"))
 
     for first, second, third in legend_explanation_args:
         exp = crawl_legend_explanation(first, second, third)
