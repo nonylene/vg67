@@ -90,7 +90,21 @@ export class SettingsControl {
     }
 
     const filterInput = this.container.querySelector("#settingsControlFilterInput");
-    filterInput.value = currentAdvancedFilter;
+    const setAdvancedFilter = (newFilter, initialize) => {
+      filterInput.value = newFilter;
+      if (newFilter.trim().length > 0) {
+        setCurrentShokuseiFilter('disabled');
+        // as validate
+        const codeKubuns = parseCodeKubunsForAdvancedFilter(newFilter);
+        updateDescription(codeKubuns);
+      } else {
+        if (!initialize) {
+          setCurrentShokuseiFilter('all');
+          clearDescription();
+        }
+      }
+    }
+    setAdvancedFilter(currentAdvancedFilter, true);
     filterInput.onchange = (e) => {
       const value = e.target.value;
       try {
@@ -105,19 +119,7 @@ export class SettingsControl {
         showError(e.message);
       }
     };
-    this.onCurrentAdvancedFilterchange = (e) => {
-      const newFilter = e.detail.value;
-      filterInput.value = newFilter;
-      if (newFilter.trim().length > 0) {
-        setCurrentShokuseiFilter('disabled');
-        // as validate
-        const codeKubuns = parseCodeKubunsForAdvancedFilter(newFilter);
-        updateDescription(codeKubuns);
-      } else {
-        setCurrentShokuseiFilter('all');
-        clearDescription();
-      }
-    }
+    this.onCurrentAdvancedFilterchange = (e) => setAdvancedFilter(e.detail.value, false);
     window.addEventListener(CURRENT_ADVANCED_FILTER_CHANGE_EVENT, this.onCurrentAdvancedFilterchange);
 
     this.container.querySelector("#settingsControlFilterResetButton").onclick = (e) => {
