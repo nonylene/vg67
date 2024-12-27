@@ -64,8 +64,9 @@ ADDITIONAL_COLORS = {
 
 WATER_AREA = 580600
 
-DAI_COLOR_ALIASES = {
+DAI_COLOR_OVERWRITES = {
     0: 9999,  # transparent
+    57: 570300,  # light brown
     91: 580600,  # Sky blue
     99: 570400,  # Sky blue
 }
@@ -189,7 +190,7 @@ def pick_color_for_dai(
         if dai not in dai_color:
             dai_color[dai] = colors
 
-    for dai, hanrei_c in DAI_COLOR_ALIASES.items():
+    for dai, hanrei_c in DAI_COLOR_OVERWRITES.items():
         dai_color[dai] = sai_colors[hanrei_c]
 
     return dai_color
