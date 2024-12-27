@@ -4,8 +4,8 @@ import {
   DAI_SPECIAL_TRANSFORM_REVERSE, DEFAULT_FILL_OPACITY,
   DAI_RAW_CODES, CHU_RAW_CODES, SAI_RAW_CODES, FALLBACK_COLOR,
   CODE_COLORS_SAI, CODE_COLORS_CHU, CODE_COLORS_DAI,
-  MIN_ZOOM_LEVEL_CHU,
-  MIN_ZOOM_LEVEL_SAI,
+  MIN_SOURCE_ZOOM_LEVEL_CHU,
+  MIN_SOURCE_ZOOM_LEVEL_SAI,
   FILL_COLOR_MATCHER_SAI,
   FILL_COLOR_MATCHER_DAI,
   FILL_COLOR_MATCHER_CHU
@@ -343,11 +343,11 @@ export const updateFillMatcher = (rawCode, kubun, newColor) => {
 // Get kubun from zoom
 
 export const getKubunForZoom = (zoom) => {
-  if (zoom >= MIN_ZOOM_LEVEL_SAI) {
+  if (zoom >= MIN_SOURCE_ZOOM_LEVEL_SAI) {
     return SAI
   }
 
-  if (zoom >= MIN_ZOOM_LEVEL_CHU) {
+  if (zoom >= MIN_SOURCE_ZOOM_LEVEL_CHU) {
     return CHU
   }
 

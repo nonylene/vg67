@@ -48,8 +48,8 @@ export const FILL_COLOR_MATCHER_SAI = buildMapboxMatcher(CODE_COLORS_SAI, PROPER
 export const FILL_COLOR_MATCHER_CHU = buildMapboxMatcher(CODE_COLORS_CHU, PROPERTY_KEY[CHU]);
 export const FILL_COLOR_MATCHER_DAI = buildMapboxMatcher(CODE_COLORS_DAI, PROPERTY_KEY[DAI]);
 
-export const MIN_ZOOM_LEVEL_SAI = 9
-export const MIN_ZOOM_LEVEL_CHU = 8
+export const MIN_SOURCE_ZOOM_LEVEL_SAI = 10
+export const MIN_SOURCE_ZOOM_LEVEL_CHU = 8
 
 export const MAP_URL = {
   "standard": "__TEMPLATE_MAPBOX_STYLE_URL_STANDARD__",

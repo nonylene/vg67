@@ -4,8 +4,8 @@ import {
   DAI_SPECIAL_TRANSFORM,
   PROPERTY_KEY,
   KUBUNS,
-  MIN_ZOOM_LEVEL_CHU,
-  MIN_ZOOM_LEVEL_SAI,
+  MIN_SOURCE_ZOOM_LEVEL_CHU,
+  MIN_SOURCE_ZOOM_LEVEL_SAI,
 } from './consts.js';
 import { SettingsButtonControl, SettingsControl } from './control.js';
 import { getMapStyleSetting } from './localStorage.js';
@@ -370,7 +370,7 @@ map.on('style.load', () => {
       "__TEMPLATE_MAPTILE_DAI_URL__",
     ],
     minzoom: 6,
-    maxzoom: MIN_ZOOM_LEVEL_CHU,
+    maxzoom: MIN_SOURCE_ZOOM_LEVEL_CHU,
     bounds: [
       122, 24, 154, 46,
     ],
@@ -380,8 +380,8 @@ map.on('style.load', () => {
     tiles: [
       "__TEMPLATE_MAPTILE_CHU_URL__",
     ],
-    minzoom: MIN_ZOOM_LEVEL_CHU,
-    maxzoom: MIN_ZOOM_LEVEL_SAI,
+    minzoom: MIN_SOURCE_ZOOM_LEVEL_CHU,
+    maxzoom: MIN_SOURCE_ZOOM_LEVEL_SAI - 1,
     bounds: [
       122, 24, 154, 46,
     ],
@@ -391,7 +391,7 @@ map.on('style.load', () => {
     tiles: [
       "__TEMPLATE_MAPTILE_SAI_URL__",
     ],
-    minzoom: MIN_ZOOM_LEVEL_SAI,
+    minzoom: MIN_SOURCE_ZOOM_LEVEL_SAI,
     maxzoom: 12,
     bounds: [
       122, 24, 154, 46,
@@ -406,7 +406,7 @@ map.on('style.load', () => {
         'source': 'vg67-dai',
         'source-layer': 'vg67_dai',
         'minzoom': 6,
-        'maxzoom': 8,
+        'maxzoom': MIN_SOURCE_ZOOM_LEVEL_CHU,
         "paint": {
           "fill-color": FILL_COLOR_MATCHER_DAI,
           "fill-opacity": currentDaiFillOpacity,
@@ -424,8 +424,8 @@ map.on('style.load', () => {
         'type': 'fill',
         'source': 'vg67-chu',
         'source-layer': 'vg67_chu',
-        'minzoom': 8,
-        'maxzoom': 10,
+        'minzoom': MIN_SOURCE_ZOOM_LEVEL_CHU,
+        'maxzoom': MIN_SOURCE_ZOOM_LEVEL_SAI,
         "paint": {
           "fill-color": FILL_COLOR_MATCHER_CHU,
           "fill-opacity": currentChuFillOpacity,
@@ -443,7 +443,7 @@ map.on('style.load', () => {
         'type': 'fill',
         'source': 'vg67-sai',
         'source-layer': 'vg67_sai',
-        'minzoom': 10,
+        'minzoom': MIN_SOURCE_ZOOM_LEVEL_SAI,
         "paint": {
           "fill-color": FILL_COLOR_MATCHER_SAI,
           "fill-opacity": currentSaiFillOpacity,

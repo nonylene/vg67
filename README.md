@@ -48,7 +48,7 @@ Install [felt/tippecanoe](https://github.com/felt/tippecanoe) and run:
 ```
 $ tippecanoe -Z10 -z12 -d14 -l vg67_sai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_sai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/sai/out/ --force --read-parallel data/geojson-lines/vg67_sai.geojsonlines
 $ tippecanoe -Z8 -z9 -l vg67_chu --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_chu" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/chu/out/ --force --read-parallel data/geojson-lines/vg67_chu.geojsonlines
-$ tippecanoe -Z6 -z8 -l vg67_dai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_dai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/dai/out/ --force --read-parallel data/geojson-lines/vg67_dai.geojsonlines
+$ tippecanoe -Z6 -z7 -l vg67_dai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_dai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/dai/out/ --force --read-parallel data/geojson-lines/vg67_dai.geojsonlines
 ```
 
 - `-d14`: Keep high resolution on the max zoom
