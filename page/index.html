@@ -94,11 +94,40 @@
       </div>
       <div class="settingsControlLabel">詳細フィルタ（<a href="http://gis.biodic.go.jp/webgis/sc-016.html"
           target="_blank">凡例</a>）</div>
-      <div class="settingsControlLabelWrapper">
-        <input id="settingsControlFilterInput" placeholder="例: 570300, 14"></input>
-        <button id="settingsControlFilterResetButton">×</button>
+      <div class="settingsControlFilterWrapper">
+        <button id="settingsControlFilterSearchButton" title="凡例検索を表示">🔍️</button>
+        <div class="settingsControlFilterInputWrapper">
+          <input id="settingsControlFilterInput" placeholder="例: 570300, 14"></input>
+          <button id="settingsControlFilterResetButton" title="クリア">×</button>
+        </div>
       </div>
       <div id="settingsControlFilterWrapper"></div>
+    </div>
+  </template>
+
+  <template id="hanreiFilterSettingsControlTemplate">
+    <div class="mapboxgl-ctrl mapboxgl-ctrl-group" id="hanreiFilterSettingsControl">
+      <div id="hanreiFilterSettingsHeader">
+        <div id="hanreiFilterSettingTitle">🔍️&thinsp;凡例検索 （<a href="http://gis.biodic.go.jp/webgis/sc-016.html"
+            target="_blank">一覧</a>）</div>
+        <div id="hanreiFilterSettingsCloseButtonWrapper">
+          <button id="hanreiFilterSettingsCloseButton">×</button>
+        </div>
+      </div>
+      <div>
+        <input id="hanreiFilterInput" placeholder="コードまたは名前でフィルタ"></input>
+      </div>
+      <div id="hanreiFilterSelects"></div>
+      <template id="hanrelFilterSelectsTemplate">
+        <div id="hanreiFilterSelects">
+          <template id="hanrelFilterSelectTemplate">
+            <div class="hanrelFilterSelect">
+              <input type="checkbox" />
+              <label></label>
+            </div>
+          </template>
+        </div>
+      </template>
     </div>
   </template>
 

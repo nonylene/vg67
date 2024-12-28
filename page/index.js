@@ -7,11 +7,11 @@ import {
   MIN_SOURCE_ZOOM_LEVEL_CHU,
   MIN_SOURCE_ZOOM_LEVEL_SAI,
 } from './consts.js';
-import { SettingsButtonControl, SettingsControl } from './control.js';
+import { SettingsButtonControl } from './control.js';
 import { getMapStyleSetting } from './localStorage.js';
 import { formatCode, getAdvancedLayerFilters, getCodeColor, getFillOpacity, getKubunForZoom, getLegends, getShokuseiLayerFilters, scaleCode, updateCodeColor, updateFillMatcher } from './mapFunction.js';
 import { getLngLatFromURL, getZoomFromURL, updateURL } from './url.js';
-import { currentChuFillOpacity, currentChuFilter, currentDaiFillOpacity, currentDaiFilter, currentSaiFillOpacity, currentSaiFilter, setCurrentRawCode, setCurrentFillOpacity, setCurrentHanreiKubun, currentCodeKubun, currentHanreiKubun, currentRawCode, CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, setCurrentDaiFilter, setCurrentChuFilter, setCurrentSaiFilter } from './variables.js';
+import { currentChuFillOpacity, currentChuFilter, currentDaiFillOpacity, currentDaiFilter, currentSaiFillOpacity, currentSaiFilter, setCurrentRawCode, setCurrentFillOpacity, setCurrentHanreiKubun, currentCodeKubun, currentHanreiKubun, currentRawCode, CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, setCurrentDaiFilter, setCurrentChuFilter, setCurrentSaiFilter, setCurrentShokuseiFilter } from './variables.js';
 
 
 // Build map as fast as possible
@@ -37,17 +37,24 @@ map.addControl(
   "bottom-right",
 );
 
-const settingsControl = new SettingsControl();
+// settings
+const setttingsButtonControl = new SettingsButtonControl();
 
 map.addControl(
-  new SettingsButtonControl(settingsControl),
+  setttingsButtonControl,
   "bottom-right",
 );
 
-map.addControl(
-  settingsControl,
-  "bottom-right",
-);
+setttingsButtonControl.addSettingsControl(map);
+
+window.addEventListener(CURRENT_ADVANCED_FILTER_CHANGE_EVENT, (e) => {
+  const newFilter = e.detail.value;
+  if (newFilter.trim().length > 0) {
+    setCurrentShokuseiFilter('disabled');
+  } else {
+    setCurrentShokuseiFilter('all');
+  }
+});
 
 /* constants */
 // Some user agents (Fx, Safari) do not have userAgentData still;
@@ -112,9 +119,7 @@ const handleSingleClick = (func) => {
 
 // touch events only fires on mobile
 const handleTouchStart = () => {
-  if (map.hasControl(settingsControl)) {
-    map.removeControl(settingsControl);
-  }
+  setttingsButtonControl.removeSettingsControlIfExists(map);
 
   if (tapTimer != null) {
     doubleTapping = true;
@@ -130,9 +135,7 @@ const handleTouchStart = () => {
 }
 
 const handleMouseDown = () => {
-  if (map.hasControl(settingsControl)) {
-    map.removeControl(settingsControl);
-  }
+  setttingsButtonControl.removeSettingsControlIfExists(map);
 }
 
 const handleZoomEnd = () => {

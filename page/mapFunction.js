@@ -8,7 +8,10 @@ import {
   MIN_SOURCE_ZOOM_LEVEL_SAI,
   FILL_COLOR_MATCHER_SAI,
   FILL_COLOR_MATCHER_DAI,
-  FILL_COLOR_MATCHER_CHU
+  FILL_COLOR_MATCHER_CHU,
+  DAI_RAW_CODE_NAMES,
+  CHU_RAW_CODE_NAMES,
+  SAI_RAW_CODE_NAMES
 } from './consts.js';
 
 // Utilities
@@ -219,6 +222,43 @@ export const getLegends = (rawCode, kubun) => {
   }
 }
 
+export const getCodeKubunDescriptionWithName = (kubun, name) => {
+  let prefix = null;
+  switch (kubun) {
+    case DAI:
+      prefix = '大区分'
+      break
+    case CHU:
+      prefix = '中区分'
+      break
+    case SAI:
+      prefix = '細区分'
+      break
+  }
+
+  return `${prefix}/${name}`
+}
+
+export const getCodeKubunDescription = (code, kubun) => {
+  let names = null;
+  switch (kubun) {
+    case DAI:
+      names = DAI_RAW_CODE_NAMES
+      break
+    case CHU:
+      names = CHU_RAW_CODE_NAMES
+      break
+    case SAI:
+      names = SAI_RAW_CODE_NAMES
+      break
+  }
+
+  if (code in names) {
+    return getCodeKubunDescriptionWithName(kubun, names[code])
+  }
+
+  return null
+}
 
 // Get opacity
 const SELECTED_FILL_OPACITY = {

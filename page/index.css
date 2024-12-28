@@ -165,22 +165,34 @@ div.legendPopup {
   padding-right: 3px;
 }
 
-div#settingsControl {
+div#settingsControl,
+div#hanreiFilterSettingsControl {
   margin-left: 10px;
   padding: 12px;
   line-height: 1.5;
+}
+
+div#settingsControl {
   width: 200px;
 }
 
-div#settingsControl,
-div#settingsControl select,
-div#settingsControl input {
-  font-family: arial, sans-serif;
-  font-size: 1rem;
+div#hanreiFilterSettingsControl {
+  width: 100%;
 }
 
-div#settingsControl div.settingsControlLabel {
-  font-size: 0.9rem;
+div#hanreiFilterSettingsControl {
+  width: 300px;
+  max-width: calc(100vw - 50px);
+}
+
+div#settingsControl,
+div#hanreiFilterSettingsControl,
+div#settingsControl select,
+div#hanreiFilterSettingsControl select,
+div#settingsControl input,
+div#hanreiFilterSettingsControl input {
+  font-family: arial, sans-serif;
+  font-size: 1rem;
 }
 
 div#settingsControlFilter {
@@ -189,8 +201,13 @@ div#settingsControlFilter {
   color: #7b7b7b;
 }
 
-div.settingsControlLabelWrapper {
+div.settingsControlFilterWrapper {
+  display: flex;
+}
+
+div.settingsControlFilterInputWrapper {
   position: relative;
+  flex-grow: 1;
 }
 
 button#settingsControlFilterResetButton {
@@ -204,8 +221,18 @@ button#settingsControlFilterResetButton {
   padding-inline-end: 6px;
 }
 
-button#settingsControlFilterResetButton:focus {
+button#settingsControlFilterResetButton:focus,
+button#settingsControlFilterResetButton:hover,
+button#settingsControlFilterSearchButton:focus,
+button#settingsControlFilterSearchButton:hover {
   background-color: rgb(0 0 0/5%);
+}
+
+button#settingsControlFilterSearchButton {
+  all: unset;
+  padding-inline-start: 2px;
+  padding-inline-end: 4px;
+  cursor: pointer;
 }
 
 div#settingsControl select {
@@ -215,11 +242,21 @@ div#settingsControl select {
 
 div#settingsControl input {
   padding: 4px 1.3rem 4px 4px;
+}
+
+input#hanreiFilterInput {
+  padding: 4px 4px 4px 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+div#settingsControl input {
   width: 100%;
   box-sizing: border-box;
 }
 
 div.settingsControlLabel {
+  font-size: 0.9rem;
   margin-block-end: 0.2rem;
 }
 
@@ -243,6 +280,50 @@ div#settingsControlFilterWrapper div {
   line-height: 1.4;
 }
 
+div#hanreiFilterSettingsHeader {
+  display: flex;
+}
+
+div#hanreiFilterSettingTitle {
+  flex-grow: 1;
+  margin-block-end: 0.4rem;
+}
+
+button#hanreiFilterSettingsCloseButton {
+  all: unset;
+  font-size: 1.5rem;
+  line-height: 0.9rem;
+  cursor: pointer;
+  /* expand clickable area */
+  margin: -4px -4px -4px 0;
+  padding: 4px;
+}
+
+div#hanreiFilterSelects {
+  margin-block-start: 6px;
+  overflow-y: auto;
+  height: 30vh;
+}
+
+div.hanrelFilterSelect {
+  display: flex;
+  font-size: 0.9rem;
+}
+
+div.hanrelFilterSelect:hover {
+  background-color: rgb(0 0 0/5%);
+}
+
+div.hanrelFilterSelect label {
+  flex-grow: 1;
+  padding: 4px;
+  line-height: 1.4;
+}
+
+div.hanrelFilterSelect input {
+  padding: 4px;
+}
+
 /* mobile */
 @media (max-width: 600px) {
   div.wrapper {
@@ -259,5 +340,4 @@ div#settingsControlFilterWrapper div {
   details.legendWrapDetails[open]>summary {
     list-style: revert;
   }
-
 }

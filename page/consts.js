@@ -3,9 +3,19 @@ export const LEGEND_CHU = "__TEMPLATE_LEGEND_CHU__";
 export const LEGEND_SAI = "__TEMPLATE_LEGEND_SAI__";
 export const LEGEND_SHOKUSEI = "__TEMPLATE_LEGEND_SHOKUSEI__";
 
-export const DAI_RAW_CODES = Object.keys(LEGEND_DAI).map(v => parseInt(v))
-export const CHU_RAW_CODES = [...DAI_RAW_CODES.map(v => v * 100), ...Object.keys(LEGEND_CHU).map(v => parseInt(v))]
-export const SAI_RAW_CODES = [...CHU_RAW_CODES.map(v => v * 100), ...Object.keys(LEGEND_SAI).map(v => parseInt(v))]
+export const DAI_RAW_CODE_NAMES = Object.fromEntries(Object.entries(LEGEND_DAI).map(([k, v]) => [k, v.n]));
+export const CHU_RAW_CODE_NAMES = Object.fromEntries([
+  ...Object.entries(DAI_RAW_CODE_NAMES).map(([k, v]) => [parseInt(k) * 100, v]),
+  ...Object.entries(LEGEND_CHU),
+])
+export const SAI_RAW_CODE_NAMES = Object.fromEntries([
+  ...Object.entries(CHU_RAW_CODE_NAMES).map(([k, v]) => [parseInt(k) * 100, v]),
+  ...Object.entries(LEGEND_SAI),
+])
+
+export const DAI_RAW_CODES = Object.keys(DAI_RAW_CODE_NAMES).map(v => parseInt(v))
+export const CHU_RAW_CODES = Object.keys(CHU_RAW_CODE_NAMES).map(v => parseInt(v))
+export const SAI_RAW_CODES = Object.keys(SAI_RAW_CODE_NAMES).map(v => parseInt(v))
 
 // Kubun enums
 // Contribution guide: Put your favorite month/day for a new kubun const
