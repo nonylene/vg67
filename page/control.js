@@ -204,7 +204,7 @@ export class HanreiFilterSettingsControl {
       const selects = selectsTemplate.content.cloneNode(true).firstElementChild;
       const selectTemplate = selects.querySelector('#hanrelFilterSelectTemplate');
 
-      const trimmed = value.trim();
+      const trimmed = value.trim().replace(/\**$/, "").replace(/^0*/, ""); // Remove 0 prefix and * suffix
       const selectedCodeDescriptions = this.allCodeDescriptions.filter(([k,]) => this.currentAdvancedFilterCodes.includes(k))
       const remainingCodeDescriptions = this.allCodeDescriptions.filter(
         ([k, v]) => !this.currentAdvancedFilterCodes.includes(k) && (String(k).includes(trimmed) || v.includes(trimmed))
