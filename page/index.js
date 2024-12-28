@@ -239,6 +239,7 @@ const showHanrei = (rawCode, legends, kubun) => {
   document.querySelector("div#titleWrapper").style.display = "none";
   document.querySelector("div#legend").replaceWith(clone)
   document.querySelector("div#legendWrapper").style.display = "flex";
+  document.querySelector("div#legendTile").scrollTo(0, 0);
 
   setCurrentHanreiKubun(kubun);
 
