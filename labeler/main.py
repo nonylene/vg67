@@ -4,23 +4,23 @@ import json
 import pathlib
 import traceback
 from collections import defaultdict
-from math import sqrt
 from operator import itemgetter
 
 import shapely
 
-LIMIT_AREA_ALPHA = 0.9  # (15 - scale) ^ 2 ^ 2 * 100m * 100m
-LIMIT_DISTANCE_ALPHA = 10  # (15 - scale) ^ 2 * 100m
+LIMIT_AREA_ALPHA = 0.25  # (16 - scale) ^ 2 ^ 2 * 100m * 100m
+LIMIT_DISTANCE_ALPHA = 5  # (16 - scale) ^ 2 * 100m
 
-LIMIT_AREA_12_5 = 2 * 16 * LIMIT_AREA_ALPHA * 100 * 100 * 0.00001 * 0.00001
-LIMIT_AREA_13 = 16 * LIMIT_AREA_ALPHA * 100 * 100 * 0.00001 * 0.00001
-LIMIT_AREA_14 = 4 * LIMIT_AREA_ALPHA * 100 * 100 * 0.00001 * 0.00001
-LIMIT_AREA_15 = LIMIT_AREA_ALPHA * 100 * 100 * 0.00001 * 0.00001
+LIMIT_AREA_16 = LIMIT_AREA_ALPHA * 100 * 100 * 0.00001 * 0.00001
 
-LIMIT_DISTANCE_12_5 = sqrt(2) * 4 * LIMIT_DISTANCE_ALPHA * 100 * 0.00001
-LIMIT_DISTANCE_13 = 4 * LIMIT_DISTANCE_ALPHA * 100 * 0.00001
-LIMIT_DISTANCE_14 = 2 * LIMIT_DISTANCE_ALPHA * 100 * 0.00001
-LIMIT_DISTANCE_15 = LIMIT_DISTANCE_ALPHA * 100 * 0.00001
+LIMIT_DISTANCE_16 = LIMIT_DISTANCE_ALPHA * 100 * 0.00001
+
+SCALES = {
+    "25": 2**3.5,  # 12.5
+    "3": 2**3,  # 13
+    "4": 2**2,  # 14
+    "5": 2,  # 15
+}
 
 
 def process_file(input_path: pathlib.Path, output_path: pathlib.Path):
@@ -33,10 +33,10 @@ def process_file(input_path: pathlib.Path, output_path: pathlib.Path):
             match type(geom):
                 case shapely.MultiPolygon:
                     code_point_areas[code].extend(
-                        [(p.representative_point(), p.area) for p in geom.geoms if p.area > LIMIT_AREA_15]  # type: ignore
+                        [(p.representative_point(), p.area) for p in geom.geoms if p.area > LIMIT_AREA_16]  # type: ignore
                     )
                 case shapely.Polygon:
-                    if geom.area > LIMIT_AREA_15:
+                    if geom.area > LIMIT_AREA_16:
                         code_point_areas[code].append(
                             (
                                 geom.representative_point(),
@@ -53,74 +53,51 @@ def process_file(input_path: pathlib.Path, output_path: pathlib.Path):
     all_points = []
     for code, point_areas in code_point_areas.items():
         sorted_point_areas = list(reversed(sorted(point_areas, key=itemgetter(1))))
+        distance_cache = {}
 
-        # To gain more performance, we can use cache to calculate the distance
-        # Remove points that is not eligible for scale 15
+        def get_distance(i, j):
+            if cache := distance_cache.get((i, j), None):
+                return cache
+
+            distance = shapely.distance(
+                sorted_point_areas[i][0], sorted_point_areas[j][0]
+            )
+            distance_cache[(i, j)] = distance
+            return distance
+
         i = 0
         while i < len(sorted_point_areas):
             point_i = sorted_point_areas[i][0]
             sorted_point_areas = sorted_point_areas[: i + 1] + [
                 pa_j
                 for pa_j in sorted_point_areas[i + 1 :]
-                if shapely.distance(point_i, pa_j[0]) > LIMIT_DISTANCE_15
+                if shapely.distance(point_i, pa_j[0]) > LIMIT_DISTANCE_16
             ]
             i += 1
 
-        # Filter points that is eligible for scale 14
-        idx_14 = [
-            idx
-            for idx in range(len(sorted_point_areas))
-            if sorted_point_areas[idx][1] > LIMIT_AREA_14
-        ]
-        i = 0
-        while i < len(idx_14):
-            point_i = sorted_point_areas[i][0]
-            idx_14 = idx_14[: i + 1] + [
-                j
-                for j in idx_14[i + 1 :]
-                if shapely.distance(point_i, sorted_point_areas[j][0])
-                > LIMIT_DISTANCE_14
+        properties = [{"H": code} for _ in sorted_point_areas]
+        for key, scale in SCALES.items():
+            # Filter points that is eligible for scale 14
+            idxes = [
+                idx
+                for idx in range(len(sorted_point_areas))
+                if sorted_point_areas[idx][1] > (LIMIT_AREA_16 * scale * scale)
             ]
-            i += 1
 
-        # Filter points that is eligible for scale 13
-        idx_13 = [idx for idx in idx_14 if sorted_point_areas[idx][1] > LIMIT_AREA_13]
-        i = 0
-        while i < len(idx_13):
-            point_i = sorted_point_areas[i][0]
-            idx_13 = idx_13[: i + 1] + [
-                j
-                for j in idx_13[i + 1 :]
-                if shapely.distance(point_i, sorted_point_areas[j][0])
-                > LIMIT_DISTANCE_13
-            ]
-            i += 1
+            i = 0
+            while i < len(idxes):
+                idxes = idxes[: i + 1] + [
+                    j
+                    for j in idxes[i + 1 :]
+                    if get_distance(i, j) > (LIMIT_DISTANCE_16 * scale)
+                ]
+                i += 1
 
-        # Filter points that is eligible for scale 12
-        idx_12_5 = [
-            idx for idx in idx_13 if sorted_point_areas[idx][1] > LIMIT_AREA_12_5
-        ]
-        i = 0
-        while i < len(idx_12_5):
-            point_i = sorted_point_areas[i][0]
-            idx_12_5 = idx_12_5[: i + 1] + [
-                j
-                for j in idx_12_5[i + 1 :]
-                if shapely.distance(point_i, sorted_point_areas[j][0])
-                > LIMIT_DISTANCE_12_5
-            ]
-            i += 1
+            for i in idxes:
+                properties[i][key] = True
 
         for i, (point, _) in enumerate(sorted_point_areas):
-            properties = {"H": code}
-            if i in idx_12_5:
-                properties["12.5"] = True
-            if i in idx_13:
-                properties["13"] = True
-            if i in idx_14:
-                properties["14"] = True
-
-            all_points.append((point, properties))
+            all_points.append((point, properties[i]))
 
     value["features"] = [
         {

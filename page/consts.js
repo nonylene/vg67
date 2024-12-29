@@ -59,7 +59,8 @@ const buildMapboxMatcher = (colors, key) => {
 }
 
 // Zoom level 12.5 -> zoom = 12
-export const SAI_LABEL_BASE_FILTER = ["step", ["zoom"], false, 12, ["has", "12.5"], 13, ["has", "13"], 14, ["has", "14"], 15, true];
+export const SAI_LABEL_BASE_FILTER = ["step", ["zoom"], false,
+  12, ["has", "25"], 13, ["has", "3"], 14, ["has", "4"], 15, ["has", "5"], 16, true];
 
 export const FILL_COLOR_MATCHER_SAI = buildMapboxMatcher(CODE_COLORS_SAI, PROPERTY_KEY[SAI]);
 export const FILL_COLOR_MATCHER_CHU = buildMapboxMatcher(CODE_COLORS_CHU, PROPERTY_KEY[CHU]);

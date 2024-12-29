@@ -1,7 +1,7 @@
 import { getMapStyleSetting, setMapStyleSetting } from "./localStorage.js";
 import { CHU, CHU_RAW_CODE_NAMES, DAI, DAI_RAW_CODE_NAMES, DAI_SPECIAL_TRANSFORM, MAP_URL, SAI, SAI_RAW_CODE_NAMES } from "./consts.js";
 import { CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, currentAdvancedFilter, currentShokuseiFilter, setCurrentAdvancedFilter, setCurrentShokuseiFilter } from './variables.js';
-import { getCodeKubunDescription, getCodeKubunDescriptionWithName, getLegends, parseCodeKubunsForAdvancedFilter } from "./mapFunction.js";
+import { getCodeKubunDescription, getCodeKubunDescriptionWithName, parseCodeKubunsForAdvancedFilter } from "./mapFunction.js";
 
 // https://docs.mapbox.com/mapbox-gl-js/ja/api/markers/#icontrol
 export class SettingsButtonControl {
