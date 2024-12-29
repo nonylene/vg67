@@ -1,6 +1,6 @@
 /* Global variables among modules */
 
-import { CHU, DAI, DEFAULT_FILL_OPACITY, SAI } from "./consts.js";
+import { CHU, DAI, DEFAULT_FILL_OPACITY, SAI, SAI_LABELS } from "./consts.js";
 
 export let currentDaiFilter = null;
 export let currentChuFilter = null;
@@ -21,6 +21,7 @@ export function setCurrentSaiFilter(v) {
 export let currentDaiFillOpacity = DEFAULT_FILL_OPACITY[DAI];
 export let currentChuFillOpacity = DEFAULT_FILL_OPACITY[CHU];
 export let currentSaiFillOpacity = DEFAULT_FILL_OPACITY[SAI];
+export let currentSaiLabelsFillOpacity = DEFAULT_FILL_OPACITY[SAI_LABELS];
 
 export function setCurrentFillOpacity(v, kubun) {
   switch (kubun) {
@@ -32,6 +33,9 @@ export function setCurrentFillOpacity(v, kubun) {
       break;
     case SAI:
       currentSaiFillOpacity = v;
+      break;
+    case SAI_LABELS:
+      currentSaiLabelsFillOpacity = v;
       break;
   }
 }

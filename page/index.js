@@ -6,12 +6,16 @@ import {
   KUBUNS,
   MIN_SOURCE_ZOOM_LEVEL_CHU,
   MIN_SOURCE_ZOOM_LEVEL_SAI,
+  SAI_RAW_CODE_NAMES,
+  SAI_LABEL_BASE_FILTER,
+  SAI_LABELS,
+  LAYER_KUBUNS,
 } from './consts.js';
 import { SettingsButtonControl } from './control.js';
 import { getMapStyleSetting } from './localStorage.js';
 import { formatCode, getAdvancedLayerFilters, getCodeColor, getFillOpacity, getKubunForZoom, getLegends, getShokuseiLayerFilters, scaleCode, updateCodeColor, updateFillMatcher } from './mapFunction.js';
 import { getLngLatFromURL, getZoomFromURL, updateURL } from './url.js';
-import { currentChuFillOpacity, currentChuFilter, currentDaiFillOpacity, currentDaiFilter, currentSaiFillOpacity, currentSaiFilter, setCurrentRawCode, setCurrentFillOpacity, setCurrentHanreiKubun, currentCodeKubun, currentHanreiKubun, currentRawCode, CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, setCurrentDaiFilter, setCurrentChuFilter, setCurrentSaiFilter, setCurrentShokuseiFilter } from './variables.js';
+import { currentChuFillOpacity, currentChuFilter, currentDaiFillOpacity, currentDaiFilter, currentSaiFillOpacity, currentSaiFilter, setCurrentRawCode, setCurrentFillOpacity, setCurrentHanreiKubun, currentCodeKubun, currentHanreiKubun, currentRawCode, CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, setCurrentDaiFilter, setCurrentChuFilter, setCurrentSaiFilter, setCurrentShokuseiFilter, currentSaiLabelsFillOpacity } from './variables.js';
 
 
 // Build map as fast as possible
@@ -81,19 +85,27 @@ let popup = null;
 let legendOpen = !mobile;
 let legendParentOpen = false;
 
+const setOpacity = (layerKubun, opacity) => {
+  if (layerKubun === SAI_LABELS) {
+    map.setPaintProperty(LAYER_NAME[layerKubun], 'text-opacity', opacity, paintPropertyOptions);
+  } else {
+    map.setPaintProperty(LAYER_NAME[layerKubun], 'fill-opacity', opacity, paintPropertyOptions);
+  }
+}
+
 const updateFillOpacity = (rawCode, kubun) => {
-  KUBUNS.forEach(targetKubun => {
+  LAYER_KUBUNS.forEach(targetKubun => {
     const fillOpacity = getFillOpacity(rawCode, kubun, targetKubun);
     setCurrentFillOpacity(fillOpacity, targetKubun);
-    map.setPaintProperty(LAYER_NAME[targetKubun], 'fill-opacity', fillOpacity, paintPropertyOptions);
+    setOpacity(targetKubun, fillOpacity);
   })
 }
 
 const resetFillOpacity = () => {
-  KUBUNS.forEach(kubun => {
+  LAYER_KUBUNS.forEach(kubun => {
     const fillOpacity = getFillOpacity(null, kubun, kubun);
     setCurrentFillOpacity(fillOpacity, kubun);
-    map.setPaintProperty(LAYER_NAME[kubun], 'fill-opacity', fillOpacity, paintPropertyOptions);
+    setOpacity(kubun, fillOpacity);
   })
 }
 
@@ -170,6 +182,14 @@ const handleMoveEnd = () => {
   updateURL(map)
 }
 
+const getSaiLabelFilter = (sai) => {
+  if (sai == null) {
+    return SAI_LABEL_BASE_FILTER
+  } else {
+    return ["all", sai, SAI_LABEL_BASE_FILTER]
+  }
+}
+
 const setMapFilters = ([dai, chu, sai]) => {
   setCurrentDaiFilter(dai);
   setCurrentChuFilter(chu);
@@ -177,6 +197,7 @@ const setMapFilters = ([dai, chu, sai]) => {
   map.setFilter(LAYER_NAME[DAI], dai)
   map.setFilter(LAYER_NAME[CHU], chu)
   map.setFilter(LAYER_NAME[SAI], sai)
+  map.setFilter(LAYER_NAME[SAI_LABELS], getSaiLabelFilter(sai))
 }
 
 const handleCurrentAdvancedFilterChanged = (e) => {
@@ -196,6 +217,9 @@ const onPickColorChange = (value, rawCode, kubun) => {
   updateCodeColor(rawCode, kubun, value);
   const fillMatcher = updateFillMatcher(rawCode, kubun, value);
   map.setPaintProperty(LAYER_NAME[kubun], 'fill-color', fillMatcher, paintPropertyOptions);
+  if (kubun == SAI) {
+    map.setPaintProperty(LAYER_NAME[SAI_LABELS], 'text-halo-color', fillMatcher, paintPropertyOptions);
+  }
 }
 
 const fetchDescription = async (fullCode) => {
@@ -335,7 +359,7 @@ const onMapClick = (e, kubun) => {
 }
 
 map.on('load', () => {
-  map.on('click', LAYER_NAME[SAI], (e) => {
+  map.on('click', [LAYER_NAME[SAI], LAYER_NAME[SAI_LABELS]], (e) => {
     onMapClick(e, SAI);
   });
 
@@ -366,7 +390,25 @@ map.on('load', () => {
 
 map.on('style.load', () => {
   // Make features shine when no light environment (night)
-  const fillEmissiveStrength = getMapStyleSetting() === 'night' ? 1 : 0;
+  const fillEmissiveStrength = getMapStyleSetting() == 'night' ? 1 : 0;
+
+  const dark = ['night', 'satellite'].includes(getMapStyleSetting());
+  const labelTextColor = [
+    "let", "rgb", ["to-rgba", FILL_COLOR_MATCHER_SAI],
+    [
+      "step",
+      // calcluate luma
+      [
+        "+",
+        ["*", ["at", 0, ["var", "rgb"]], 0.299],
+        ["*", ["at", 1, ["var", "rgb"]], 0.587],
+        ["*", ["at", 2, ["var", "rgb"]], 0.114]
+      ],
+      dark ? "#E0E0E0" : "#FFFFFF",
+      dark ? 180 : 150,
+      dark ? "#000000" : "#636363"
+    ]
+  ]
 
   map.addSource('vg67-dai', {
     type: 'vector',
@@ -396,6 +438,17 @@ map.on('style.load', () => {
       "__TEMPLATE_MAPTILE_SAI_URL__",
     ],
     minzoom: MIN_SOURCE_ZOOM_LEVEL_SAI,
+    maxzoom: 12,
+    bounds: [
+      122, 24, 154, 46,
+    ],
+  });
+  map.addSource('vg67-sai-labels', {
+    type: 'vector',
+    tiles: [
+      "__TEMPLATE_MAPTILE_SAI_LABELS_URL__",
+    ],
+    minzoom: 12,
     maxzoom: 12,
     bounds: [
       122, 24, 154, 46,
@@ -461,5 +514,28 @@ map.on('style.load', () => {
       },
       currentSaiFilter != null ? { "filter": currentSaiFilter } : null
     )
+  );
+  map.addLayer(
+    {
+      'id': LAYER_NAME[SAI_LABELS],
+      'type': 'symbol',
+      'source': 'vg67-sai-labels',
+      'source-layer': 'vg67_sai_labels',
+      'minzoom': 12.5,
+      'layout': {
+        "text-field": ["get", ["to-string", ["get", "H"]], ["literal", SAI_RAW_CODE_NAMES]],
+        "text-size": 13,
+        "text-letter-spacing": 0.1,
+        "text-line-height": 1.3,
+      },
+      "paint": {
+        "text-color": labelTextColor,
+        "text-halo-width": 1,
+        "text-halo-blur": 2,
+        "text-halo-color": FILL_COLOR_MATCHER_SAI,
+        "text-opacity": currentSaiLabelsFillOpacity,
+      },
+      "filter": getSaiLabelFilter(currentSaiFilter),
+    }
   );
 });

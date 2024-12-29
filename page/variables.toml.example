@@ -3,6 +3,7 @@ MAPBOX_ACCESS_TOKEN = "pk.XX.XXXX"
 MAPTILE_CHU_URL = '"http://localhost:8000/mvt/chu/out/{z}/{x}/{y}.pbf"'
 MAPTILE_DAI_URL = '"http://localhost:8000/mvt/dai/out/{z}/{x}/{y}.pbf"'
 MAPTILE_SAI_URL = '"http://localhost:8000/mvt/sai/out/{z}/{x}/{y}.pbf"'
+MAPTILE_SAI_LABELS_URL = '"http://localhost:8000/mvt/sai-lables/out/{z}/{x}/{y}.pbf"'
 
 HANREI_BASE_URL = '"http://localhost:8000/hanrei/"'
 

@@ -41,7 +41,17 @@ $ awk '{print $0}' ./data/geojson-trimmed/chu/*.geojson > data/geojson-lines/vg6
 $ awk '{print $0}' ./data/geojson-trimmed/dai/*.geojson > data/geojson-lines/vg67_dai.geojsonlines
 ```
 
-### 6. Create xyz style mvt tile files
+### 6. Create label symbols
+
+See [labeler](./labeler/)
+
+and Run:
+
+```
+# Insert a newline after each file
+$ awk '{print $0}' ./data/geojson-trimmed/sai-labels/*.geojson > data/geojson-lines/vg67_sai_labels.geojsonlines
+```
+### 7. Create xyz style mvt tile files
 
 Install [felt/tippecanoe](https://github.com/felt/tippecanoe) and run:
 
@@ -49,6 +59,7 @@ Install [felt/tippecanoe](https://github.com/felt/tippecanoe) and run:
 $ tippecanoe -Z10 -z12 -d14 -l vg67_sai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_sai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/sai/out/ --force --read-parallel data/geojson-lines/vg67_sai.geojsonlines
 $ tippecanoe -Z8 -z9 -l vg67_chu --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_chu" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/chu/out/ --force --read-parallel data/geojson-lines/vg67_chu.geojsonlines
 $ tippecanoe -Z6 -z7 -l vg67_dai --no-simplification-of-shared-nodes --no-tile-compression --no-tile-size-limit --no-feature-limit --no-tiny-polygon-reduction --name="vg67_dai" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/dai/out/ --force --read-parallel data/geojson-lines/vg67_dai.geojsonlines
+$ tippecanoe -Z12 -z12 -d15 -l vg67_sai_labels --no-tile-compression --no-tile-size-limit --no-feature-limit --name="vg67_sai_labels" --description="1/2.5万植生図GISデータ(環境省生物多様性センター) http://www.biodic.go.jp/kiso/vg/vg_kiso.html を加工して作成" -e data/mvt/sai-labels/out/ --force --read-parallel data/geojson-lines/vg67_sai_labels.geojsonlines
 ```
 
 - `-d14`: Keep high resolution on the max zoom
@@ -57,7 +68,7 @@ $ tippecanoe -Z6 -z7 -l vg67_dai --no-simplification-of-shared-nodes --no-tile-c
 - `--no-simplification-of-shared-nodes`: Cleanful polygon simpify (No overlaps, No empty spaces)
 - `--no-tiny-polygon-reduction`: Disable small polygon show up as a square polygon
 
-### 7. Upload maptile files to some block storage
+### 8. Upload maptile files to some block storage
 
 For example...
 
@@ -67,6 +78,7 @@ $ edit rclone.conf
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/dai/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/dai/ --no-check-dest --s3-no-check-bucket --progress
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/chu/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/chu/ --no-check-dest --s3-no-check-bucket --progress
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/sai/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/sai/ --no-check-dest --s3-no-check-bucket --progress
+$ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/mvt/sai-labels/out:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/mvt/sai-labels/ --no-check-dest --s3-no-check-bucket --progress
 
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/hanrei/descriptions:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/hanrei/descriptions/ --no-check-dest --s3-no-check-bucket --progress
 $ docker run --rm -it -v ./rclone.conf:/config/rclone/rclone.conf:ro -v ./data/hanrei/images:/data/source:ro rclone/rclone copy /data/source/ r2://{r2 bucket}/vg67/hanrei/images/ --no-check-dest --s3-no-check-bucket --progress

@@ -11,7 +11,8 @@ import {
   FILL_COLOR_MATCHER_CHU,
   DAI_RAW_CODE_NAMES,
   CHU_RAW_CODE_NAMES,
-  SAI_RAW_CODE_NAMES
+  SAI_RAW_CODE_NAMES,
+  SAI_LABELS
 } from './consts.js';
 
 // Utilities
@@ -262,9 +263,10 @@ export const getCodeKubunDescription = (code, kubun) => {
 
 // Get opacity
 const SELECTED_FILL_OPACITY = {
-  [SAI]: 0.8,
-  [CHU]: 0.9,
   [DAI]: 0.9,
+  [CHU]: 0.9,
+  [SAI]: 0.8,
+  [SAI_LABELS]: 1,
 }
 
 const getTargetCodes = (rawCode, codeKubun, targetKubun) => {
@@ -279,6 +281,7 @@ const getTargetCodes = (rawCode, codeKubun, targetKubun) => {
   switch (codeKubun) {
     case SAI:
       switch (targetKubun) {
+        case SAI_LABELS:
         case SAI:
           return [rawCode]
         case CHU:
@@ -289,6 +292,7 @@ const getTargetCodes = (rawCode, codeKubun, targetKubun) => {
 
     case CHU:
       switch (targetKubun) {
+        case SAI_LABELS:
         case SAI:
           return SAI_RAW_CODES.filter(v => Math.floor(v / 100) === rawCode)
         case CHU:
@@ -300,6 +304,7 @@ const getTargetCodes = (rawCode, codeKubun, targetKubun) => {
     case DAI:
       const code = DAI_SPECIAL_TRANSFORM[rawCode] ?? rawCode;
       switch (targetKubun) {
+        case SAI_LABELS:
         case SAI:
           return SAI_RAW_CODES.filter(v => Math.floor(v / 10000) === code)
         case CHU:

@@ -19,22 +19,26 @@ export const SAI_RAW_CODES = Object.keys(SAI_RAW_CODE_NAMES).map(v => parseInt(v
 
 // Kubun enums
 // Contribution guide: Put your favorite month/day for a new kubun const
+export const SAI_LABELS = 1220;
 export const SAI = 11;
 export const CHU = 13;
 export const DAI = 1113;
 
-export const KUBUNS = [SAI, CHU, DAI];
+export const KUBUNS = [DAI, CHU, SAI];
+export const LAYER_KUBUNS = [DAI, CHU, SAI, SAI_LABELS];
 
 export const LAYER_NAME = {
-  [SAI]: 'vg67-sai',
-  [CHU]: 'vg67-chu',
   [DAI]: 'vg67-dai',
+  [CHU]: 'vg67-chu',
+  [SAI]: 'vg67-sai',
+  [SAI_LABELS]: 'vg67-sai-labels',
 }
 
 export const PROPERTY_KEY = {
-  [SAI]: 'H',
-  [CHU]: 'C',
   [DAI]: 'D',
+  [CHU]: 'C',
+  [SAI]: 'H',
+  [SAI_LABELS]: 'H',
 }
 
 // Fill color matcher contents may change by color settings
@@ -53,6 +57,9 @@ const buildMapboxMatcher = (colors, key) => {
     FALLBACK_COLOR,
   ];
 }
+
+// Zoom level 12.5 -> zoom = 12
+export const SAI_LABEL_BASE_FILTER = ["step", ["zoom"], false, 12, ["has", "12.5"], 13, ["has", "13"], 14, ["has", "14"], 15, true];
 
 export const FILL_COLOR_MATCHER_SAI = buildMapboxMatcher(CODE_COLORS_SAI, PROPERTY_KEY[SAI]);
 export const FILL_COLOR_MATCHER_CHU = buildMapboxMatcher(CODE_COLORS_CHU, PROPERTY_KEY[CHU]);
@@ -80,8 +87,8 @@ export const DAI_SPECIAL_TRANSFORM_REVERSE = Object.fromEntries(
 )
 
 export const DEFAULT_FILL_OPACITY = {
-  [SAI]: 0.55,
-  [CHU]: 0.5,
   [DAI]: 0.5,
+  [CHU]: 0.5,
+  [SAI]: 0.55,
+  [SAI_LABELS]: 1,
 }
-
