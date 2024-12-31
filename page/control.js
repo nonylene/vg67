@@ -255,6 +255,9 @@ export class HanreiFilterSettingsControl {
 
     this.container.querySelector("#hanreiFilterInput").onchange = (e) => {
       setFilterSelects(e.target.value);
+      if (mobile) {
+        e.target.blur();
+      }
     };
     setFilterSelects("");
 
