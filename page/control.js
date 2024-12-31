@@ -1,4 +1,4 @@
-import { getMapStyleSetting, setMapStyleSetting } from "./localStorage.js";
+import { getLayerOpacitySetting, getMapStyleSetting, setLayerOpacitySetting, setMapStyleSetting } from "./localStorage.js";
 import { CHU, CHU_RAW_CODE_NAMES, DAI, DAI_RAW_CODE_NAMES, DAI_SPECIAL_TRANSFORM, MAP_URL, SAI, SAI_RAW_CODE_NAMES } from "./consts.js";
 import { CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, currentAdvancedFilter, currentShokuseiFilter, setCurrentAdvancedFilter, setCurrentShokuseiFilter } from './variables.js';
 import { getCodeKubunDescription, getCodeKubunDescriptionWithName, parseCodeKubunsForAdvancedFilter } from "./mapFunction.js";
@@ -64,12 +64,18 @@ export class SettingsControl {
   onAdd(map) {
     this.container = document.querySelector("#settingsControlTemplate").content.cloneNode(true).firstElementChild;
 
+    const opacityInput = this.container.querySelector("#settingsControlOpacity");
+    opacityInput.value = getLayerOpacitySetting();
+    opacityInput.onchange = (e) => {
+      const v = e.target.value;
+      setLayerOpacitySetting(v);
+    }
+
     const mapSelect = this.container.querySelector("#settingsControlMapSelect");
     mapSelect.value = getMapStyleSetting();
     mapSelect.onchange = (e) => {
       const v = e.target.value;
       setMapStyleSetting(v);
-      map.setStyle(MAP_URL[v])
     }
 
     const shokuseiSelect = this.container.querySelector("#settingsControlShokuseiSelect");

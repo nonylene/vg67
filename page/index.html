@@ -73,6 +73,13 @@
 
   <template id="settingsControlTemplate">
     <div class="mapboxgl-ctrl mapboxgl-ctrl-group" id="settingsControl">
+      <div class="settingsControlLabel">不透明度</div>
+      <div>
+        <input type="range" id="settingsControlOpacity" min="0" max="2" step="0.2" list="settingsControlOpacityData" />
+        <datalist id="settingsControlOpacityData">
+          <option value="1"></option>
+        </datalist>
+      </div>
       <div class="settingsControlLabel">地図スタイル</div>
       <div>
         <select id="settingsControlMapSelect">

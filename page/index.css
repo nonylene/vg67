@@ -244,6 +244,11 @@ div#settingsControl input {
   padding: 4px 1.3rem 4px 4px;
 }
 
+div#settingsControl input[type=range] {
+  padding: 0;
+}
+
+
 input#hanreiFilterInput {
   padding: 4px 4px 4px 4px;
   width: 100%;

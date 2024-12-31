@@ -1,6 +1,7 @@
 /* Global variables among modules */
 
 import { CHU, DAI, DEFAULT_FILL_OPACITY, SAI, SAI_LABELS } from "./consts.js";
+import { getUserOpacity } from "./mapFunction.js";
 
 export let currentDaiFilter = null;
 export let currentChuFilter = null;
@@ -18,10 +19,11 @@ export function setCurrentSaiFilter(v) {
   currentSaiFilter = v;
 }
 
-export let currentDaiFillOpacity = DEFAULT_FILL_OPACITY[DAI];
-export let currentChuFillOpacity = DEFAULT_FILL_OPACITY[CHU];
-export let currentSaiFillOpacity = DEFAULT_FILL_OPACITY[SAI];
-export let currentSaiLabelsFillOpacity = DEFAULT_FILL_OPACITY[SAI_LABELS];
+// Contirbution guide: Use dynamic imports and lazy initialize when an import conflict occurs
+export let currentDaiFillOpacity = getUserOpacity(DEFAULT_FILL_OPACITY[DAI]);
+export let currentChuFillOpacity = getUserOpacity(DEFAULT_FILL_OPACITY[CHU]);
+export let currentSaiFillOpacity = getUserOpacity(DEFAULT_FILL_OPACITY[SAI]);
+export let currentSaiLabelsFillOpacity = getUserOpacity(DEFAULT_FILL_OPACITY[SAI_LABELS]);
 
 export function setCurrentFillOpacity(v, kubun) {
   switch (kubun) {

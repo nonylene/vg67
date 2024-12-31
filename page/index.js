@@ -11,7 +11,7 @@ import {
   LAYER_KUBUNS,
 } from './consts.js';
 import { SettingsButtonControl } from './control.js';
-import { getMapStyleSetting } from './localStorage.js';
+import { getMapStyleSetting, SETTINGS_LAYER_OPACITY_CHANGE_EVENT, SETTINGS_MAP_STYLE_CHANGE_EVENT } from './localStorage.js';
 import { formatCode, getAdvancedLayerFilters, getCodeColor, getFillOpacity, getKubunForZoom, getLegends, getShokuseiLayerFilters, scaleCode, updateCodeColor, updateFillMatcher } from './mapFunction.js';
 import { getLngLatFromURL, getZoomFromURL, updateURL } from './url.js';
 import { currentChuFillOpacity, currentChuFilter, currentDaiFillOpacity, currentDaiFilter, currentSaiFillOpacity, currentSaiFilter, setCurrentRawCode, setCurrentFillOpacity, setCurrentHanreiKubun, currentCodeKubun, currentHanreiKubun, currentRawCode, CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, setCurrentDaiFilter, setCurrentChuFilter, setCurrentSaiFilter, setCurrentShokuseiFilter, currentSaiLabelsFillOpacity } from './variables.js';
@@ -84,7 +84,7 @@ let popup = null;
 let legendOpen = !mobile;
 let legendParentOpen = false;
 
-const setOpacity = (layerKubun, opacity) => {
+const setOpacityToMap = (layerKubun, opacity) => {
   if (layerKubun === SAI_LABELS) {
     map.setPaintProperty(LAYER_NAME[layerKubun], 'text-opacity', opacity, paintPropertyOptions);
   } else {
@@ -96,7 +96,7 @@ const updateFillOpacity = (rawCode, kubun) => {
   LAYER_KUBUNS.forEach(targetKubun => {
     const fillOpacity = getFillOpacity(rawCode, kubun, targetKubun);
     setCurrentFillOpacity(fillOpacity, targetKubun);
-    setOpacity(targetKubun, fillOpacity);
+    setOpacityToMap(targetKubun, fillOpacity);
   })
 }
 
@@ -104,7 +104,7 @@ const resetFillOpacity = () => {
   LAYER_KUBUNS.forEach(kubun => {
     const fillOpacity = getFillOpacity(null, kubun, kubun);
     setCurrentFillOpacity(fillOpacity, kubun);
-    setOpacity(kubun, fillOpacity);
+    setOpacityToMap(kubun, fillOpacity);
   })
 }
 
@@ -147,6 +147,12 @@ const handleTouchStart = () => {
 
 const handleMouseDown = () => {
   setttingsButtonControl.removeSettingsControlIfExists(map);
+}
+
+const handleEscapeKeyDown = () => {
+  if (!setttingsButtonControl.removeSettingsControlIfExists(map)) {
+    deselect();
+  }
 }
 
 const handleZoomEnd = () => {
@@ -210,6 +216,14 @@ const handleCurrentShokuseiFilterChanged = (e) => {
     return
   }
   setMapFilters(getShokuseiLayerFilters(filter));
+}
+
+const handleSettingsMapStyleChanged = (e) => {
+  map.setStyle(MAP_URL[e.detail.value]);
+}
+
+const handleSettingsLayerOpacityChanged = (e) => {
+  updateFillOpacity(currentRawCode, currentCodeKubun)
 }
 
 const onPickColorChange = (value, rawCode, kubun) => {
@@ -385,6 +399,12 @@ map.on('load', () => {
 
   window.addEventListener(CURRENT_ADVANCED_FILTER_CHANGE_EVENT, handleCurrentAdvancedFilterChanged)
   window.addEventListener(CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, handleCurrentShokuseiFilterChanged)
+  window.addEventListener(SETTINGS_LAYER_OPACITY_CHANGE_EVENT, handleSettingsLayerOpacityChanged)
+  window.addEventListener(SETTINGS_MAP_STYLE_CHANGE_EVENT, handleSettingsMapStyleChanged)
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key == "Escape") handleEscapeKeyDown();
+  })
 })
 
 map.on('style.load', () => {

@@ -14,6 +14,7 @@ import {
   SAI_RAW_CODE_NAMES,
   SAI_LABELS
 } from './consts.js';
+import { getLayerOpacitySetting } from './localStorage.js';
 
 // Utilities
 export const formatCode = (code) => {
@@ -315,13 +316,23 @@ const getTargetCodes = (rawCode, codeKubun, targetKubun) => {
   }
 }
 
+export const getUserOpacity = (opacity) => {
+  const opacitySetting = getLayerOpacitySetting();
+  if (opacitySetting >= 1) {
+    return opacity + (1 - opacity) * (opacitySetting - 1)
+  } else {
+    return opacity * opacitySetting
+  }
+}
+
+// codeKubun can be null when the rawCode is null
 export const getFillOpacity = (rawCode, codeKubun, targetKubun) => {
   if (rawCode == null) {
-    return DEFAULT_FILL_OPACITY[targetKubun]
+    return getUserOpacity(DEFAULT_FILL_OPACITY[targetKubun])
   }
 
   const targetCodes = getTargetCodes(rawCode, codeKubun, targetKubun);
-  return ["match", ["get", PROPERTY_KEY[targetKubun]], targetCodes, SELECTED_FILL_OPACITY[targetKubun], 0.2]
+  return ["match", ["get", PROPERTY_KEY[targetKubun]], targetCodes, getUserOpacity(SELECTED_FILL_OPACITY[targetKubun]), getUserOpacity(0.2)]
 }
 
 // Get color
