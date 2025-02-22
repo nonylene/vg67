@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <title>シームレス植生図</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="description" content="環境省生物多様性センターによる日本の植生分布データを植生の解説とともに地図に表示するページ">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.1/mapbox-gl.css" rel="stylesheet">
   <link href="./index.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.1/mapbox-gl.js"></script>
@@ -140,6 +141,12 @@
 
   <template id="settingsControlFilterWrapperTemplate">
     <div id="settingsControlFilterWrapper">
+    </div>
+  </template>
+
+  <template id="compassControlTemplate">
+    <div class="mapboxgl-ctrl mapboxgl-ctrl-group">
+      <button id="compassButton"><span id="compassButtonIcon" class="mapboxgl-ctrl-icon compass-ctrl-icon"></button>
     </div>
   </template>
 

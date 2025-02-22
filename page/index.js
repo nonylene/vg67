@@ -10,7 +10,7 @@ import {
   SAI_LABELS,
   LAYER_KUBUNS,
 } from './consts.js';
-import { SettingsButtonControl } from './control.js';
+import { CompassControl, SettingsButtonControl } from './control.js';
 import { getMapStyleSetting, SETTINGS_LAYER_OPACITY_CHANGE_EVENT, SETTINGS_MAP_STYLE_CHANGE_EVENT } from './localStorage.js';
 import { formatCode, getAdvancedLayerFilters, getCodeColor, getFillOpacity, getKubunForZoom, getLegends, getShokuseiLayerFilters, scaleCode, updateCodeColor, updateFillMatcher } from './mapFunction.js';
 import { getLngLatFromURL, getZoomFromURL, updateURL } from './url.js';
@@ -30,15 +30,22 @@ const map = new mapboxgl.Map({
   customAttribution: [`Source: <a href="http://www.biodic.go.jp/kiso/vg/vg_kiso.html">1/2.5万植生図GISデータ(環境省生物多様性センター)</a> を加工して作成`],
 });
 
-map.addControl(
-  new mapboxgl.GeolocateControl({
-    positionOptions: {
-      enableHighAccuracy: true
-    },
-    trackUserLocation: true,
-  }),
-  "bottom-right",
-);
+const geolocateControl = new mapboxgl.GeolocateControl({
+  positionOptions: {
+    enableHighAccuracy: true
+  },
+  showUserHeading: true,
+  trackUserLocation: true,
+});
+
+const compassControl = new CompassControl();
+
+geolocateControl.on('trackuserlocationstart', () => compassControl.onTrackUserLocationStart());
+geolocateControl.on('trackuserlocationend', () => compassControl.onTrackUserLocationEnd());
+
+map.addControl(geolocateControl, "bottom-right");
+
+map.addControl(compassControl, 'bottom-right');
 
 // settings
 const setttingsButtonControl = new SettingsButtonControl();

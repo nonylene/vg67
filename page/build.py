@@ -67,6 +67,8 @@ TEMPLATES = [
     "localStorage.js",
     "mapFunction.js",
     "index.css",
+    "assets/compass.svg",
+    "assets/compass_active.svg",
 ]
 
 data_dir = pathlib.Path(__file__).parent.parent / "data"
@@ -76,6 +78,8 @@ out_dir.mkdir(parents=True, exist_ok=True)
 variables = build_variables(data_dir)
 
 for template_file in TEMPLATES:
-    content = template(pathlib.Path(__file__).with_name(template_file), variables)
+    content = template(pathlib.Path(__file__).parent / template_file, variables)
+    dst = out_dir / template_file
+    dst.parent.mkdir(parents=True, exist_ok=True)
     with open(out_dir / template_file, "w") as f:
         f.write(content)

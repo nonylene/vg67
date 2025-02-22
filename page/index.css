@@ -329,6 +329,14 @@ div.hanrelFilterSelect input {
   padding: 4px;
 }
 
+span.compass-ctrl-icon {
+  background-image: url('./assets/compass.svg');
+}
+
+span.compass-ctrl-icon-active {
+  background-image: url('./assets/compass_active.svg');
+}
+
 /* mobile */
 @media (max-width: 600px) {
   div.wrapper {

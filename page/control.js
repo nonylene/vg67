@@ -1,7 +1,7 @@
 import { getLayerOpacitySetting, getMapStyleSetting, setLayerOpacitySetting, setMapStyleSetting } from "./localStorage.js";
-import { CHU, CHU_RAW_CODE_NAMES, DAI, DAI_RAW_CODE_NAMES, DAI_SPECIAL_TRANSFORM, MAP_URL, SAI, SAI_RAW_CODE_NAMES } from "./consts.js";
+import { CHU, CHU_RAW_CODE_NAMES, DAI, DAI_RAW_CODE_NAMES, DAI_SPECIAL_TRANSFORM, SAI, SAI_RAW_CODE_NAMES } from "./consts.js";
 import { CURRENT_ADVANCED_FILTER_CHANGE_EVENT, CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, currentAdvancedFilter, currentShokuseiFilter, setCurrentAdvancedFilter, setCurrentShokuseiFilter } from './variables.js';
-import { getCodeKubunDescription, getCodeKubunDescriptionWithName, parseCodeKubunsForAdvancedFilter } from "./mapFunction.js";
+import { getCodeKubunDescription, getCodeKubunDescriptionWithName, parseCodeKubunsForAdvancedFilter, throttle } from "./mapFunction.js";
 
 // https://docs.mapbox.com/mapbox-gl-js/ja/api/markers/#icontrol
 export class SettingsButtonControl {
@@ -265,6 +265,80 @@ export class HanreiFilterSettingsControl {
   }
 
   onRemove() {
+    this.container.parentNode.removeChild(this.container);
+  }
+}
+
+export class CompassControl {
+
+  constructor() {
+    this.compassTracking = false
+    this.locationTracking = false
+    this.deviceOrientationEvent = "deviceorientationabsolute"
+    // this.deviceOrientationEvent = "deviceorientation" // For debug on PC
+  }
+
+  onTrackUserLocationStart() {
+    this.locationTracking = true
+  }
+
+  onTrackUserLocationEnd() {
+    if (this.compassTracking) {
+      this.stopTracking();
+    }
+    this.locationTracking = false
+  }
+
+  startTracking() {
+    this.iconElem.classList.add("compass-ctrl-icon-active");
+    this.iconElem.classList.remove("compass-ctrl-icon");
+    this.compassTracking = true;
+    // Hack: Indicate that compass move event is a geolocate source event, to keep current location tracking active
+    const setBearingThrottled = throttle((m, alpha) => m.easeTo({ bearing: alpha, essential: true, duration: 250 }, { geolocateSource: true }), 150);
+    this.onDeviceOrientationChanged = (e) => {
+      if (e.alpha != null) {
+        setBearingThrottled(this.map, -e.alpha);
+      }
+    };
+    window.addEventListener(this.deviceOrientationEvent, this.onDeviceOrientationChanged);
+  }
+
+  stopTracking() {
+    this.iconElem.classList.add("compass-ctrl-icon");
+    this.iconElem.classList.remove("compass-ctrl-icon-active");
+    this.compassTracking = false;
+    window.removeEventListener(this.deviceOrientationEvent, this.onDeviceOrientationChanged);
+  }
+
+  onAdd(map) {
+    this.map = map;
+    this.container = document.querySelector("#compassControlTemplate").content.cloneNode(true).firstElementChild;
+    this.iconElem = this.container.querySelector("#compassButtonIcon");
+
+    this.onRotateListener = (e) => {
+      this.iconElem.style.transform = `rotate(${-map.getBearing()}deg)`
+    }
+
+    map.on('rotate', this.onRotateListener);
+
+    this.container.querySelector("#compassButton").onclick = () => {
+      if (this.locationTracking && !this.compassTracking) {
+        // start track
+        this.startTracking();
+      } else {
+        if (this.compassTracking) {
+          // stop track
+          this.stopTracking();
+        }
+        // north up
+        map.easeTo({ bearing: 0, essential: true, duration: 250 }, { geolocateSource: true });
+      }
+    }
+    return this.container;
+  }
+
+  onRemove() {
+    map.off('rotate', this.onRotateListener)
     this.container.parentNode.removeChild(this.container);
   }
 }

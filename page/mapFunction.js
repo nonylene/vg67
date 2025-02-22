@@ -30,6 +30,16 @@ export const formatCode = (code) => {
   return String(code).padStart(6, '0');
 }
 
+export const throttle = (func, timeoutMs) => {
+  let nextFireMs = 0;
+  return (...args) => {
+    if (nextFireMs < Date.now()) {
+      func(...args);
+      nextFireMs = Date.now() + timeoutMs;
+    }
+  }
+}
+
 
 // Get layer filter
 

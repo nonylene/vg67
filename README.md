@@ -100,10 +100,10 @@ See [page](./page/README.md) directory
 
 ## Debugging
 
-On data dir, run:
+Run:
 
 ```
-$ python3 -m http.server
+$ python3 -m http.server -d data
 ```
 
 - Open <http://localhost:8000/page/> on your browser to view the map
