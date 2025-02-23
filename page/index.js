@@ -40,9 +40,6 @@ const geolocateControl = new mapboxgl.GeolocateControl({
 
 const compassControl = new CompassControl();
 
-geolocateControl.on('trackuserlocationstart', () => compassControl.onTrackUserLocationStart());
-geolocateControl.on('trackuserlocationend', () => compassControl.onTrackUserLocationEnd());
-
 map.addControl(geolocateControl, "bottom-right");
 
 map.addControl(compassControl, 'bottom-right');

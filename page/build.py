@@ -68,6 +68,7 @@ TEMPLATES = [
     "mapFunction.js",
     "index.css",
     "assets/compass.svg",
+    "assets/compass_north.svg",
     "assets/compass_active.svg",
 ]
 

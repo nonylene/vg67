@@ -8,6 +8,9 @@
   <meta name="description" content="環境省生物多様性センターによる日本の植生分布データを植生の解説とともに地図に表示するページ">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.1/mapbox-gl.css" rel="stylesheet">
   <link href="./index.css" rel="stylesheet">
+  <link rel="prefetch" href="./assets/compass.svg">
+  <link rel="prefetch" href="./assets/compass_north.svg">
+  <link rel="prefetch" href="./assets/compass_active.svg">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.1/mapbox-gl.js"></script>
 </head>
 
@@ -146,7 +149,8 @@
 
   <template id="compassControlTemplate">
     <div class="mapboxgl-ctrl mapboxgl-ctrl-group">
-      <button id="compassButton"><span id="compassButtonIcon" class="mapboxgl-ctrl-icon compass-ctrl-icon"></button>
+      <button id="compassButton"><span id="compassButtonIcon"
+          class="mapboxgl-ctrl-icon compass-ctrl-icon-north"></button>
     </div>
   </template>
 

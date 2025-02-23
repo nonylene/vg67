@@ -271,32 +271,24 @@ export class HanreiFilterSettingsControl {
 
 export class CompassControl {
 
+  STATUS_NORTH = "north"
+  STATUS_TRACKING = "avtive"
+  STATUS_INACTIVE = "inactive"
+
   constructor() {
-    this.compassTracking = false
-    this.locationTracking = false
-    this.deviceOrientationEvent = "deviceorientationabsolute"
-    // this.deviceOrientationEvent = "deviceorientation" // For debug on PC
-  }
-
-  onTrackUserLocationStart() {
-    this.locationTracking = true
-  }
-
-  onTrackUserLocationEnd() {
-    if (this.compassTracking) {
-      this.stopTracking();
-    }
-    this.locationTracking = false
+    this.status = this.STATUS_NORTH
+    this.pauseTracking = false
+    this.deviceOrientationEvent = "__TEMPLATE_DEVICE_ORIENTATION_EVENT__"
   }
 
   startTracking() {
-    this.iconElem.classList.add("compass-ctrl-icon-active");
-    this.iconElem.classList.remove("compass-ctrl-icon");
-    this.compassTracking = true;
+    this.setTrackingStatus();
     // Hack: Indicate that compass move event is a geolocate source event, to keep current location tracking active
-    const setBearingThrottled = throttle((m, alpha) => m.easeTo({ bearing: alpha, essential: true, duration: 250 }, { geolocateSource: true }), 150);
+    const setBearingThrottled = throttle((m, alpha) => m.easeTo(
+      { bearing: alpha, essential: true, duration: 250 }, { geolocateSource: true, compassTrackingSource: true, }
+    ), 150);
     this.onDeviceOrientationChanged = (e) => {
-      if (e.alpha != null) {
+      if (e.alpha != null && !this.pauseTracking) {
         setBearingThrottled(this.map, -e.alpha);
       }
     };
@@ -304,10 +296,33 @@ export class CompassControl {
   }
 
   stopTracking() {
-    this.iconElem.classList.add("compass-ctrl-icon");
-    this.iconElem.classList.remove("compass-ctrl-icon-active");
-    this.compassTracking = false;
+    if (this.map.getBearing() === 0) {
+      this.setNorthStatus();
+    } else {
+      this.setInActiveStatus();
+    }
     window.removeEventListener(this.deviceOrientationEvent, this.onDeviceOrientationChanged);
+  }
+
+  setNorthStatus() {
+    this.status = this.STATUS_NORTH;
+    this.iconElem.classList.add("compass-ctrl-icon-north");
+    this.iconElem.classList.remove("compass-ctrl-icon");
+    this.iconElem.classList.remove("compass-ctrl-icon-active");
+  }
+
+  setTrackingStatus() {
+    this.status = this.STATUS_TRACKING;
+    this.iconElem.classList.add("compass-ctrl-icon-active");
+    this.iconElem.classList.remove("compass-ctrl-icon");
+    this.iconElem.classList.remove("compass-ctrl-icon-north");
+  }
+
+  setInActiveStatus() {
+    this.status = this.STATUS_INACTIVE;
+    this.iconElem.classList.add("compass-ctrl-icon");
+    this.iconElem.classList.remove("compass-ctrl-icon-north");
+    this.iconElem.classList.remove("compass-ctrl-icon-active");
   }
 
   onAdd(map) {
@@ -316,22 +331,56 @@ export class CompassControl {
     this.iconElem = this.container.querySelector("#compassButtonIcon");
 
     this.onRotateListener = (e) => {
+      const bearing = map.getBearing();
       this.iconElem.style.transform = `rotate(${-map.getBearing()}deg)`
+      switch (this.status) {
+        case this.STATUS_NORTH:
+          if (bearing !== 0) {
+            this.setInActiveStatus();
+          }
+          break
+        case this.STATUS_INACTIVE:
+          if (bearing === 0) {
+            this.setNorthStatus();
+          }
+          break
+      }
+    }
+
+    // Pause rotation while moving not to stop moving via orientation change
+    this.onMoveStart = (e) => {
+      // If the source is compass tracking (self), continue listening (to keep smooth rotation)
+      if (e.compassTrackingSource !== true) {
+        this.pauseTracking = true;
+        if (e.geolocateSource !== true) {
+          this.stopTracking();
+        }
+      }
+    }
+
+    this.onMoveEnd = (e) => {
+      this.pauseTracking = false;
     }
 
     map.on('rotate', this.onRotateListener);
+    map.on('movestart', this.onMoveStart);
+    map.on('moveend', this.onMoveEnd);
 
     this.container.querySelector("#compassButton").onclick = () => {
-      if (this.locationTracking && !this.compassTracking) {
-        // start track
-        this.startTracking();
-      } else {
-        if (this.compassTracking) {
+      switch (this.status) {
+        case this.STATUS_NORTH:
+          // start track
+          this.startTracking();
+          break
+        case this.STATUS_TRACKING:
           // stop track
           this.stopTracking();
-        }
-        // north up
-        map.easeTo({ bearing: 0, essential: true, duration: 250 }, { geolocateSource: true });
+        // NO BREAK; continue!
+        case this.STATUS_INACTIVE:
+          // north up
+          map.easeTo({ bearing: 0, essential: true, duration: 250 }, { geolocateSource: true });
+          this.setNorthStatus();
+          break
       }
     }
     return this.container;
@@ -339,6 +388,8 @@ export class CompassControl {
 
   onRemove() {
     map.off('rotate', this.onRotateListener)
+    map.off('movestart', this.onMoveStart);
+    map.off('moveend', this.onMoveEnd);
     this.container.parentNode.removeChild(this.container);
   }
 }

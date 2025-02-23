@@ -165,6 +165,10 @@ div.legendPopup {
   padding-right: 3px;
 }
 
+button#settingsButton {
+  font-size: 20px;
+}
+
 div#settingsControl,
 div#hanreiFilterSettingsControl {
   margin-left: 10px;
@@ -335,6 +339,20 @@ span.compass-ctrl-icon {
 
 span.compass-ctrl-icon-active {
   background-image: url('./assets/compass_active.svg');
+}
+
+span.compass-ctrl-icon-north {
+  background-image: url('./assets/compass_north.svg');
+}
+
+/* mapbox override */
+div#map .mapboxgl-ctrl-group>button {
+  width: 40px;
+  height: 40px;
+}
+
+div#map .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl {
+  margin: 0 12px 12px 0;
 }
 
 /* mobile */
