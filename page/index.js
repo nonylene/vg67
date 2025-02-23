@@ -191,6 +191,10 @@ const handleMoveEnd = () => {
   updateURL(map)
 }
 
+const handlePitchEnd = () => {
+  geolocateControl.options.fitBoundsOptions.pitch = map.getPitch();
+}
+
 const getSaiLabelFilter = (sai) => {
   if (sai == null) {
     return SAI_LABEL_BASE_FILTER
@@ -400,6 +404,7 @@ map.on('load', () => {
   map.on('mousedown', handleMouseDown);
   map.on('zoomend', handleZoomEnd);
   map.on('moveend', handleMoveEnd);
+  map.on('pitchend', handlePitchEnd);
 
   window.addEventListener(CURRENT_ADVANCED_FILTER_CHANGE_EVENT, handleCurrentAdvancedFilterChanged)
   window.addEventListener(CURRENT_SHOKUSEI_FILTER_CHANGE_EVENT, handleCurrentShokuseiFilterChanged)

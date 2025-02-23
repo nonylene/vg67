@@ -283,6 +283,7 @@ export class CompassControl {
 
   startTracking() {
     this.setTrackingStatus();
+
     // Hack: Indicate that compass move event is a geolocate source event, to keep current location tracking active
     const setBearingThrottled = throttle((m, alpha) => m.easeTo(
       { bearing: alpha, essential: true, duration: 250 }, { geolocateSource: true, compassTrackingSource: true, }
@@ -292,15 +293,11 @@ export class CompassControl {
         setBearingThrottled(this.map, -e.alpha);
       }
     };
+
     window.addEventListener(this.deviceOrientationEvent, this.onDeviceOrientationChanged);
   }
 
   stopTracking() {
-    if (this.map.getBearing() === 0) {
-      this.setNorthStatus();
-    } else {
-      this.setInActiveStatus();
-    }
     window.removeEventListener(this.deviceOrientationEvent, this.onDeviceOrientationChanged);
   }
 
@@ -332,7 +329,7 @@ export class CompassControl {
 
     this.onRotateListener = (e) => {
       const bearing = map.getBearing();
-      this.iconElem.style.transform = `rotate(${-map.getBearing()}deg)`
+      this.iconElem.style.transform = `rotate(${-bearing}deg) rotateX(${map.getPitch() / 1.5}deg)`
       switch (this.status) {
         case this.STATUS_NORTH:
           if (bearing !== 0) {
@@ -347,6 +344,11 @@ export class CompassControl {
       }
     }
 
+    this.onPitchListener = (e) => {
+      this.iconElem.style.transform = `rotate(${-map.getBearing()}deg) rotateX(${map.getPitch() / 1.5}deg)`
+    }
+
+
     // Pause rotation while moving not to stop moving via orientation change
     this.onMoveStart = (e) => {
       // If the source is compass tracking (self), continue listening (to keep smooth rotation)
@@ -354,6 +356,11 @@ export class CompassControl {
         this.pauseTracking = true;
         if (e.geolocateSource !== true) {
           this.stopTracking();
+          if (this.map.getBearing() === 0) {
+            this.setNorthStatus();
+          } else {
+            this.setInActiveStatus();
+          }
         }
       }
     }
@@ -363,6 +370,7 @@ export class CompassControl {
     }
 
     map.on('rotate', this.onRotateListener);
+    map.on('pitch', this.onPitchListener);
     map.on('movestart', this.onMoveStart);
     map.on('moveend', this.onMoveEnd);
 
@@ -375,10 +383,13 @@ export class CompassControl {
         case this.STATUS_TRACKING:
           // stop track
           this.stopTracking();
-        // NO BREAK; continue!
+          // north up (pitch zero)
+          map.easeTo({ bearing: 0, pitch: 0, essential: true, duration: 200 }, { geolocateSource: true });
+          this.setNorthStatus();
+          break
         case this.STATUS_INACTIVE:
           // north up
-          map.easeTo({ bearing: 0, essential: true, duration: 250 }, { geolocateSource: true });
+          map.easeTo({ bearing: 0, essential: true, duration: 200 }, { geolocateSource: true });
           this.setNorthStatus();
           break
       }
@@ -388,6 +399,7 @@ export class CompassControl {
 
   onRemove() {
     map.off('rotate', this.onRotateListener)
+    map.off('pitch', this.onPitchListener);
     map.off('movestart', this.onMoveStart);
     map.off('moveend', this.onMoveEnd);
     this.container.parentNode.removeChild(this.container);
